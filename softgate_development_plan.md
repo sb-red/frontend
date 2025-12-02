@@ -108,7 +108,7 @@
 
 * **Description:** (가장 중요) POST /run으로 작업을 큐에 넣고, job_id를 받아 GET /status/{job_id}를 1초마다 호출(Polling)하여 상태를 추적하는 로직을 구현한다.
 
-* **Estimated Time:** 6 Hours
+* **Estimated Time:** 4 Hours
 
 * **Acceptance Criteria:**
 
@@ -116,21 +116,19 @@
 
   * [ ] 응답받은 job_id를 이용해 폴링이 시작된다.
 
-  * [ ] 폴링 상태에 따라 UI 배지가 Queued -> Processing -> Success/Fail 순서로 실시간 변경된다.
-
   * [ ] 최종 상태가 Success가 되면 폴링이 멈추고 결과값이 화면에 표시된다.
 
-### Phase 8: 리소스 사용량(Observability) 표시
+### Phase 8: 실행 상태 시각화
 
-* **Description:** 실행 완료 응답에 포함된 메트릭 데이터(CPU, Memory, Time)를 결과창 하단에 표시한다.
+* **Description:** 실행 버튼을 누르면 "대기 중(Queued)" -> "실행 중(Running)" -> "완료(Success)" 로 상태가 변하는 배지(Badge)나 스피너
 
 * **Estimated Time:** 2 Hours
 
 * **Acceptance Criteria:**
 
-  * [ ] 실행 완료 시, 실행 시간(ms)이 표시된다.
+  * [ ] 폴링 상태에 따라 UI 배지가 Queued -> Processing -> Success/Fail 순서로 실시간 변경된다.  
 
-  * [ ] (가능하다면 Recharts 사용) CPU/Memory 사용량이 텍스트 또는 간단한 차트로 표시된다.
+  * [ ] 실행 완료 시, 실행 시간(ms)이 표시된다.
 
 ## 📅 Day 5: Polish & Final Review
 
