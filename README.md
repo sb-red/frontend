@@ -1,6 +1,6 @@
 # SoftGate Frontend
 
-Developer-focused console for SoftGate (custom FaaS). Built with Next.js + Tailwind CSS + shadcn/ui to visualize the async queue and isolation architecture.
+Serverless console By SoftGate (custom FaaS). Built with Next.js + Tailwind CSS + shadcn/ui to visualize the async queue and isolation architecture.
 
 ## Structure
 - `softgate/` – Next.js app source
