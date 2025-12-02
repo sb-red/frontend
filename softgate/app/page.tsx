@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,12 +10,42 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
+type Language = "python" | "node" | "go";
+
+type SoftGateFunction = {
+  id: string;
+  name: string;
+  language: Language;
+};
+
+const languageMeta: Record<
+  Language,
+  { label: string; short: string; badgeClass: string }
+> = {
+  python: {
+    label: "Python",
+    short: "Py",
+    badgeClass: "bg-amber-100 text-amber-800 border-amber-200",
+  },
+  node: {
+    label: "Node.js",
+    short: "Js",
+    badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+  go: {
+    label: "Go",
+    short: "Go",
+    badgeClass: "bg-sky-100 text-sky-800 border-sky-200",
+  },
+};
 
 const sampleFunctions = [
-  { name: "ingest-events", language: "Python" },
-  { name: "image-resizer", language: "Node.js" },
-  { name: "metrics-collector", language: "Go" },
-];
+  { id: "fn-1", name: "ingest-events", language: "python" },
+  { id: "fn-2", name: "image-resizer", language: "node" },
+  { id: "fn-3", name: "metrics-collector", language: "go" },
+] satisfies SoftGateFunction[];
 
 const sampleCode = `# SoftGate 함수 예시
 def handler(event):
@@ -29,6 +63,10 @@ const samplePayload = `{
 }`;
 
 export default function Home() {
+  const [selectedFunctionId, setSelectedFunctionId] = useState(
+    sampleFunctions[0]?.id ?? "",
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted/40 via-background to-background">
       <div className="mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col gap-6 px-4 py-8 lg:px-10">
@@ -60,17 +98,45 @@ export default function Home() {
             <CardContent className="flex-1 space-y-4">
               <Input placeholder="Search functions" className="h-10" />
               <div className="space-y-2">
-                {sampleFunctions.map((fn) => (
-                  <button
-                    key={fn.name}
-                    className="w-full rounded-lg border bg-card/60 px-3 py-2 text-left text-sm transition hover:border-primary/50 hover:bg-accent"
-                  >
-                    <span className="block font-medium">{fn.name}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {fn.language}
-                    </span>
-                  </button>
-                ))}
+                {sampleFunctions.map((fn) => {
+                  const meta = languageMeta[fn.language];
+                  const isActive = selectedFunctionId === fn.id;
+                  return (
+                    <button
+                      key={fn.id}
+                      type="button"
+                      onClick={() => setSelectedFunctionId(fn.id)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg border bg-card/60 px-3 py-2 text-left text-sm transition",
+                        "hover:border-primary/50 hover:bg-accent",
+                        isActive &&
+                          "border-primary/60 bg-accent/80 ring-1 ring-primary/40",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={cn(
+                            "flex size-9 items-center justify-center rounded-full border text-xs font-semibold shadow-sm",
+                            meta.badgeClass,
+                          )}
+                        >
+                          {meta.short}
+                        </span>
+                        <div>
+                          <span className="block font-medium">{fn.name}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {meta.label}
+                          </span>
+                        </div>
+                      </div>
+                      {isActive && (
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                          Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
