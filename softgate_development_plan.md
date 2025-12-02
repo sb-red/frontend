@@ -16,13 +16,13 @@
 
 * **Acceptance Criteria:**
 
-  * [ ] 프로젝트가 에러 없이 로컬에서 실행된다.
+  * [✓] 프로젝트가 에러 없이 로컬에서 실행된다.
 
-  * [ ] Tailwind CSS 및 Shadcn UI(Button, Input, Card 등)가 정상 작동한다.
+  * [✓] Tailwind CSS 및 Shadcn UI(Button, Input, Card 등)가 정상 작동한다.
 
-  * [ ] 화면이 좌측(20%), 중앙(50%), 우측(30%) 영역으로 정확히 분할되어 보인다.
+  * [✓] 화면이 좌측(20%), 중앙(50%), 우측(30%) 영역으로 정확히 분할되어 보인다.
 
-  * [ ] 브라우저 창 크기를 조절해도 레이아웃이 깨지지 않는다 (Responsive).
+  * [✓] 브라우저 창 크기를 조절해도 레이아웃이 깨지지 않는다 (Responsive).
 
 ### Phase 2: 좌측 패널 - 함수 목록 UI (Mock Data)
 
