@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ type SoftGateFunction = {
   id: string;
   name: string;
   language: Language;
+  code: string;
 };
 
 const languageMeta: Record<
@@ -42,16 +44,59 @@ const languageMeta: Record<
 };
 
 const sampleFunctions = [
-  { id: "fn-1", name: "ingest-events", language: "python" },
-  { id: "fn-2", name: "image-resizer", language: "node" },
-  { id: "fn-3", name: "metrics-collector", language: "go" },
+  {
+    id: "fn-1",
+    name: "ingest-events",
+    language: "python",
+    code: `def handler(event):
+    payload = event.get("payload", {})
+    return {"status": "ok", "lang": "python", "echo": payload}
+`,
+  },
+  {
+    id: "fn-2",
+    name: "image-resizer",
+    language: "node",
+    code: `exports.handler = async (event) => {
+  const payload = event?.payload ?? {};
+  return { status: "ok", lang: "node", echo: payload };
+};
+`,
+  },
+  {
+    id: "fn-3",
+    name: "metrics-collector",
+    language: "go",
+    code: `package main
+
+import "context"
+
+func Handler(ctx context.Context, event map[string]any) (map[string]any, error) {
+    return map[string]any{"status": "ok", "lang": "go", "echo": event}, nil
+}
+`,
+  },
 ] satisfies SoftGateFunction[];
 
-const sampleCode = `# SoftGate 함수 예시
-def handler(event):
+const defaultCodeByLanguage: Record<Language, string> = {
+  python: `def handler(event):
     payload = event.get("payload", {})
-    return {"status": "ok", "message": payload.get("message", "Hello SoftGate")}
-`;
+    return {"status": "ok", "lang": "python", "echo": payload}
+`,
+  node: `exports.handler = async (event) => {
+  const payload = event?.payload ?? {};
+  return { status: "ok", lang: "node", echo: payload };
+};
+`,
+  go: `package main
+
+import "context"
+
+func Handler(ctx context.Context, event map[string]any) (map[string]any, error) {
+    return map[string]any{"status": "ok", "lang": "go", "echo": event}, nil
+}
+`,
+};
 
 const samplePayload = `{
   "event": "ping",
@@ -62,10 +107,44 @@ const samplePayload = `{
   }
 }`;
 
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[460px] items-center justify-center rounded-lg border bg-muted/40 text-sm text-muted-foreground">
+      Loading editor...
+    </div>
+  ),
+});
+
 export default function Home() {
+  const defaultFn = sampleFunctions[0];
   const [selectedFunctionId, setSelectedFunctionId] = useState(
-    sampleFunctions[0]?.id ?? "",
+    defaultFn?.id ?? "",
   );
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+    defaultFn?.language ?? "python",
+  );
+  const [code, setCode] = useState(defaultFn?.code ?? "");
+
+  const languageOptions = useMemo(
+    () =>
+      Object.entries(languageMeta).map(([value, meta]) => ({
+        value: value as Language,
+        label: meta.label,
+      })),
+    [],
+  );
+
+  const handleSelectFunction = (fn: SoftGateFunction) => {
+    setSelectedFunctionId(fn.id);
+    setSelectedLanguage(fn.language);
+    setCode(fn.code);
+  };
+
+  const handleLanguageChange = (lang: Language) => {
+    setSelectedLanguage(lang);
+    setCode(defaultCodeByLanguage[lang]);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted/40 via-background to-background">
@@ -105,7 +184,7 @@ export default function Home() {
                     <button
                       key={fn.id}
                       type="button"
-                      onClick={() => setSelectedFunctionId(fn.id)}
+                      onClick={() => handleSelectFunction(fn)}
                       className={cn(
                         "flex w-full items-center justify-between rounded-lg border bg-card/60 px-3 py-2 text-left text-sm transition",
                         "hover:border-primary/50 hover:bg-accent",
@@ -144,19 +223,40 @@ export default function Home() {
           <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
               <CardTitle className="text-base">코드 에디터</CardTitle>
-              <Button size="sm" variant="secondary">
-                저장
-              </Button>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedLanguage}
+                  onChange={(event) =>
+                    handleLanguageChange(event.target.value as Language)
+                  }
+                  className="h-9 rounded-md border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+                >
+                  {languageOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <Button size="sm" variant="secondary">
+                  저장
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="flex-1 space-y-3">
-              <div className="rounded-lg border bg-muted/40 p-4 shadow-inner">
-                <p className="mb-2 text-xs font-medium text-muted-foreground">
-                  Monaco Editor 위치(Phase 3) — 현재는 코드 블록으로 자리 표시
-                </p>
-                <pre className="h-[360px] overflow-auto rounded-md bg-background p-3 font-mono text-xs leading-relaxed text-foreground/90">
-                  {sampleCode}
-                </pre>
-              </div>
+              <MonacoEditor
+                height="460px"
+                language={selectedLanguage === "node" ? "javascript" : selectedLanguage}
+                value={code}
+                onChange={(value) => setCode(value ?? "")}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  scrollBeyondLastLine: false,
+                  renderWhitespace: "selection",
+                  automaticLayout: true,
+                }}
+              />
             </CardContent>
           </Card>
 
