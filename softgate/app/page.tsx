@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -73,6 +73,10 @@ export default function Home() {
 
   const selectedFunction = functions.find((fn) => fn.id === selectedId);
   const selectedLanguage = selectedFunction?.language ?? "python";
+  const [payload, setPayload] = useState(samplePayload);
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [runMessage, setRunMessage] = useState<string | null>(null);
 
   const languageOptions = useMemo(
     () =>
@@ -100,6 +104,36 @@ export default function Home() {
       language: selectedFunction.language,
       code: selectedFunction.code,
     });
+  };
+
+  const handlePayloadChange = (value: string | undefined) => {
+    const next = value ?? "";
+    setPayload(next);
+    try {
+      JSON.parse(next);
+      setJsonError(null);
+    } catch {
+      setJsonError("유효한 JSON 형식이 아닙니다.");
+    }
+  };
+
+  const handleRun = () => {
+    // Validate again before run to avoid stale error state.
+    try {
+      const parsed = JSON.parse(payload);
+      setJsonError(null);
+      setIsRunning(true);
+      setRunMessage("실행 요청 전송 중...");
+      // Placeholder async simulation
+      setTimeout(() => {
+        setIsRunning(false);
+        setRunMessage(
+          `실행 완료 · job preview: ${parsed?.payload?.requestId ?? "demo-job"}`,
+        );
+      }, 1200);
+    } catch {
+      setJsonError("유효한 JSON 형식이 아닙니다.");
+    }
   };
 
   return (
@@ -219,18 +253,59 @@ export default function Home() {
           <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
               <CardTitle className="text-base">실행 입력/상태</CardTitle>
-              <Button size="sm" variant="outline">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setPayload(samplePayload);
+                  setJsonError(null);
+                  setRunMessage(null);
+                }}
+              >
                 Reset
               </Button>
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium">Payload 미리보기</p>
-                <div className="min-h-[220px] rounded-lg border bg-muted/40 p-3 font-mono text-xs leading-relaxed text-foreground/80 shadow-inner">
-                  {samplePayload}
+                <div className="rounded-lg border bg-muted/40 p-2 shadow-inner">
+                  <MonacoEditor
+                    height="220px"
+                    language="json"
+                    value={payload}
+                    onChange={handlePayloadChange}
+                    theme="vs-dark"
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 12,
+                      scrollBeyondLastLine: false,
+                      renderWhitespace: "selection",
+                      automaticLayout: true,
+                    }}
+                  />
                 </div>
+                {jsonError ? (
+                  <p className="text-xs font-medium text-destructive">
+                    {jsonError}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    JSON valid. 실행 시 payload로 전송됩니다.
+                  </p>
+                )}
               </div>
-              <Button className="w-full">실행</Button>
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  onClick={handleRun}
+                  disabled={Boolean(jsonError) || isRunning}
+                >
+                  {isRunning ? "실행 중..." : "실행"}
+                </Button>
+                {runMessage && (
+                  <p className="text-xs text-muted-foreground">{runMessage}</p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
