@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,15 +12,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-type Language = "python" | "node" | "go";
-
-type SoftGateFunction = {
-  id: string;
-  name: string;
-  language: Language;
-  code: string;
-};
+import {
+  defaultCodeByLanguage,
+  type Language,
+  type SoftGateFunction,
+  useFunctionStore,
+} from "@/lib/stores/use-function-store";
+import { useShallow } from "zustand/shallow";
 
 const languageMeta: Record<
   Language,
@@ -43,61 +41,6 @@ const languageMeta: Record<
   },
 };
 
-const sampleFunctions = [
-  {
-    id: "fn-1",
-    name: "ingest-events",
-    language: "python",
-    code: `def handler(event):
-    payload = event.get("payload", {})
-    return {"status": "ok", "lang": "python", "echo": payload}
-`,
-  },
-  {
-    id: "fn-2",
-    name: "image-resizer",
-    language: "node",
-    code: `exports.handler = async (event) => {
-  const payload = event?.payload ?? {};
-  return { status: "ok", lang: "node", echo: payload };
-};
-`,
-  },
-  {
-    id: "fn-3",
-    name: "metrics-collector",
-    language: "go",
-    code: `package main
-
-import "context"
-
-func Handler(ctx context.Context, event map[string]any) (map[string]any, error) {
-    return map[string]any{"status": "ok", "lang": "go", "echo": event}, nil
-}
-`,
-  },
-] satisfies SoftGateFunction[];
-
-const defaultCodeByLanguage: Record<Language, string> = {
-  python: `def handler(event):
-    payload = event.get("payload", {})
-    return {"status": "ok", "lang": "python", "echo": payload}
-`,
-  node: `exports.handler = async (event) => {
-  const payload = event?.payload ?? {};
-  return { status: "ok", lang: "node", echo: payload };
-};
-`,
-  go: `package main
-
-import "context"
-
-func Handler(ctx context.Context, event map[string]any) (map[string]any, error) {
-    return map[string]any{"status": "ok", "lang": "go", "echo": event}, nil
-}
-`,
-};
-
 const samplePayload = `{
   "event": "ping",
   "payload": {
@@ -117,14 +60,19 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 });
 
 export default function Home() {
-  const defaultFn = sampleFunctions[0];
-  const [selectedFunctionId, setSelectedFunctionId] = useState(
-    defaultFn?.id ?? "",
-  );
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    defaultFn?.language ?? "python",
-  );
-  const [code, setCode] = useState(defaultFn?.code ?? "");
+  const { functions, selectedId, setSelected, setCode, changeLanguage } =
+    useFunctionStore(
+      useShallow((state) => ({
+        functions: state.functions,
+        selectedId: state.selectedId,
+        setSelected: state.setSelected,
+        setCode: state.setCode,
+        changeLanguage: state.changeLanguage,
+      })),
+    );
+
+  const selectedFunction = functions.find((fn) => fn.id === selectedId);
+  const selectedLanguage = selectedFunction?.language ?? "python";
 
   const languageOptions = useMemo(
     () =>
@@ -136,14 +84,22 @@ export default function Home() {
   );
 
   const handleSelectFunction = (fn: SoftGateFunction) => {
-    setSelectedFunctionId(fn.id);
-    setSelectedLanguage(fn.language);
-    setCode(fn.code);
+    setSelected(fn.id);
   };
 
   const handleLanguageChange = (lang: Language) => {
-    setSelectedLanguage(lang);
-    setCode(defaultCodeByLanguage[lang]);
+    changeLanguage(lang);
+  };
+
+  const handleSave = () => {
+    if (!selectedFunction) return;
+    // Placeholder persistence: log out the payload to be wired to an API later.
+    console.log("[save]", {
+      id: selectedFunction.id,
+      name: selectedFunction.name,
+      language: selectedFunction.language,
+      code: selectedFunction.code,
+    });
   };
 
   return (
@@ -177,9 +133,9 @@ export default function Home() {
             <CardContent className="flex-1 space-y-4">
               <Input placeholder="Search functions" className="h-10" />
               <div className="space-y-2">
-                {sampleFunctions.map((fn) => {
+                {functions.map((fn) => {
                   const meta = languageMeta[fn.language];
-                  const isActive = selectedFunctionId === fn.id;
+                  const isActive = selectedId === fn.id;
                   return (
                     <button
                       key={fn.id}
@@ -237,7 +193,7 @@ export default function Home() {
                     </option>
                   ))}
                 </select>
-                <Button size="sm" variant="secondary">
+                <Button size="sm" variant="secondary" onClick={handleSave}>
                   저장
                 </Button>
               </div>
@@ -246,7 +202,7 @@ export default function Home() {
               <MonacoEditor
                 height="460px"
                 language={selectedLanguage === "node" ? "javascript" : selectedLanguage}
-                value={code}
+                value={selectedFunction?.code ?? defaultCodeByLanguage.python}
                 onChange={(value) => setCode(value ?? "")}
                 theme="vs-dark"
                 options={{

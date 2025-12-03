@@ -1,0 +1,95 @@
+"use client";
+
+import { create } from "zustand";
+
+export type Language = "python" | "node" | "go";
+
+export type SoftGateFunction = {
+  id: string;
+  name: string;
+  language: Language;
+  code: string;
+};
+
+export const defaultCodeByLanguage: Record<Language, string> = {
+  python: `def handler(event):
+    payload = event.get("payload", {})
+    return {"status": "ok", "lang": "python", "echo": payload}
+`,
+  node: `exports.handler = async (event) => {
+  const payload = event?.payload ?? {};
+  return { status: "ok", lang: "node", echo: payload };
+};
+`,
+  go: `package main
+
+import "context"
+
+func Handler(ctx context.Context, event map[string]any) (map[string]any, error) {
+    return map[string]any{"status": "ok", "lang": "go", "echo": event}, nil
+}
+`,
+};
+
+const initialFunctions: SoftGateFunction[] = [
+  {
+    id: "fn-1",
+    name: "ingest-events",
+    language: "python",
+    code: defaultCodeByLanguage.python,
+  },
+  {
+    id: "fn-2",
+    name: "image-resizer",
+    language: "node",
+    code: defaultCodeByLanguage.node,
+  },
+  {
+    id: "fn-3",
+    name: "metrics-collector",
+    language: "go",
+    code: defaultCodeByLanguage.go,
+  },
+];
+
+type FunctionStore = {
+  functions: SoftGateFunction[];
+  selectedId: string;
+  setSelected: (id: string) => void;
+  setCode: (code: string) => void;
+  changeLanguage: (language: Language) => void;
+};
+
+export const useFunctionStore = create<FunctionStore>((set) => ({
+  functions: initialFunctions,
+  selectedId: initialFunctions[0]?.id ?? "",
+  setSelected: (id) =>
+    set((state) => (state.selectedId === id ? state : { selectedId: id })),
+  setCode: (code) =>
+    set((state) => {
+      const current = state.functions.find((fn) => fn.id === state.selectedId);
+      if (!current || current.code === code) return state;
+
+      return {
+        functions: state.functions.map((fn) =>
+          fn.id === state.selectedId ? { ...fn, code } : fn,
+        ),
+      };
+    }),
+  changeLanguage: (language) =>
+    set((state) => {
+      const current = state.functions.find((fn) => fn.id === state.selectedId);
+      const nextCode = defaultCodeByLanguage[language];
+      if (!current) return state;
+      if (current.language === language && current.code === nextCode)
+        return state;
+
+      return {
+        functions: state.functions.map((fn) =>
+          fn.id === state.selectedId
+            ? { ...fn, language, code: nextCode }
+            : fn,
+        ),
+      };
+    }),
+}));
