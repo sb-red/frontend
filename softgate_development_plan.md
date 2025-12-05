@@ -96,11 +96,11 @@
 
 * **Acceptance Criteria:**
 
-  * [ ] 탭 전환(Output <-> History)이 부드럽게 작동한다.
+  * [✓] 탭 전환(Output <-> History)이 부드럽게 작동한다.
 
-  * [ ] Output 탭에는 상태 배지(Status Badge), 로그(Log), 결과값(Result) 영역이 구분되어 있다.
+  * [✓] Output 탭에는 상태 배지(Status Badge), 로그(Log), 결과값(Result) 영역이 구분되어 있다.
 
-  * [ ] History 탭에는 더미 리스트가 테이블 형태로 표시된다.
+  * [✓] History 탭에는 더미 리스트가 테이블 형태로 표시된다.
 
 ## 📅 Day 4: Async Integration (The "Magic")
 
