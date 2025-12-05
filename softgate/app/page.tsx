@@ -579,11 +579,12 @@ useEffect(() => {
 }, [activeTab, selectedFunction]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-white">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(14,165,233,0.08),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_30%)]" />
       {toast && (
         <div
           className={cn(
-            "fixed right-4 top-4 z-50 rounded-md border px-4 py-2 text-sm shadow-lg",
+            "fixed right-4 top-4 z-50 rounded-lg border px-4 py-2 text-sm shadow-lg backdrop-blur",
             toast.type === "success"
               ? "border-emerald-200 bg-emerald-50 text-emerald-900"
               : "border-red-200 bg-red-50 text-red-900",
@@ -592,26 +593,32 @@ useEffect(() => {
           {toast.message}
         </div>
       )}
-      <div className="mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col gap-6 px-4 py-8 lg:px-10">
-        <header className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-1 rounded-full bg-gradient-to-b from-slate-800 to-slate-500" />
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
-                SoftBank
-              </p>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-                SoftGate Console
-              </h1>
+      <div className="relative mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col gap-6 px-4 py-8 lg:px-10">
+        <header className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-1.5 rounded-full bg-gradient-to-b from-slate-900 via-slate-700 to-slate-400" />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                  Trusted Infra
+                </p>
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  SoftGate Console
+                </h1>
+              </div>
+            </div>
+            <div className="hidden items-center gap-2 rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 text-xs font-medium text-slate-500 shadow-sm backdrop-blur md:flex">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.25)]" />
+              Live Workspace
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Developer workspace for async serverless functions — clean, minimal, SoftBank-inspired.
+          <p className="text-sm text-slate-600">
+            Serverless Function Workspace
           </p>
         </header>
 
         <div className="grid flex-1 gap-4 auto-rows-[minmax(0,1fr)] lg:grid-cols-[2fr_5fr_3fr]">
-          <Card className="h-full">
+          <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
               <CardTitle className="text-base">함수 목록</CardTitle>
               <Button
@@ -625,7 +632,7 @@ useEffect(() => {
             <CardContent className="flex-1 space-y-4">
               <Input placeholder="Search functions" className="h-10" />
               {showCreateForm && (
-                <div className="space-y-2 rounded-lg border bg-card/60 p-3">
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
                   <Input
                     placeholder="함수 이름"
                     value={createName}
@@ -687,16 +694,16 @@ useEffect(() => {
                       type="button"
                       onClick={() => handleSelectFunction(fn)}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-lg border bg-card/60 px-3 py-2 text-left text-sm transition",
-                        "hover:border-primary/50 hover:bg-accent",
+                        "flex w-full items-center justify-between rounded-xl border border-slate-200/60 bg-white/70 px-3 py-2 text-left text-sm transition shadow-sm",
+                        "hover:border-primary/50 hover:bg-slate-50",
                         isActive &&
-                          "border-primary/60 bg-accent/80 ring-1 ring-primary/40",
+                          "border-primary/60 bg-slate-100 ring-2 ring-primary/30 shadow-md",
                       )}
                     >
                       <div className="flex items-center gap-3">
                         <span
                           className={cn(
-                            "flex size-9 items-center justify-center rounded-full border text-xs font-semibold shadow-sm",
+                            "flex size-9 items-center justify-center rounded-full border text-xs font-semibold shadow-sm bg-white",
                             meta.badgeClass,
                           )}
                         >
@@ -721,7 +728,7 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          <Card className="h-full">
+          <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
               <CardTitle className="text-base">코드 에디터</CardTitle>
               <div className="flex items-center gap-2">
@@ -770,11 +777,12 @@ useEffect(() => {
                   renderWhitespace: "selection",
                   automaticLayout: true,
                 }}
+                className="overflow-hidden rounded-xl border border-slate-900/40 shadow-inner"
               />
             </CardContent>
           </Card>
 
-          <Card className="h-full">
+          <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
               <CardTitle className="text-base">실행 입력/상태</CardTitle>
               <Button
@@ -798,7 +806,7 @@ useEffect(() => {
             <CardContent className="flex-1 space-y-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium">Payload 미리보기</p>
-                <div className="rounded-lg border bg-muted/40 p-2 shadow-inner">
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-900 shadow-inner">
                   <MonacoEditor
                     height="220px"
                     language="json"
@@ -812,6 +820,7 @@ useEffect(() => {
                       renderWhitespace: "selection",
                       automaticLayout: true,
                     }}
+                    className="monaco-input"
                   />
                 </div>
                 {jsonError ? (
@@ -891,7 +900,7 @@ useEffect(() => {
                       </div>
                     )}
                     {!selectedFunction && (
-                      <div className="rounded-md border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                      <div className="rounded-md border border-border bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
                         함수를 선택하면 실행 결과가 표시됩니다.
                       </div>
                     )}
