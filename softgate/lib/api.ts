@@ -74,6 +74,25 @@ export type InvocationListItem = {
   status?: string;
 };
 
+export type FunctionDetail = {
+  id: number;
+  name: string;
+  runtime: string;
+  description?: string;
+  code?: string;
+  sample_event?: Record<string, unknown>;
+  params?: Array<Record<string, unknown>>;
+};
+
+type CreateFunctionRequest = {
+  name: string;
+  runtime: string;
+  code: string;
+  description?: string;
+  sample_event?: Record<string, unknown>;
+  params?: Array<Record<string, unknown>>;
+};
+
 export async function listFunctions() {
   return apiRequest<FunctionListItem[]>("/functions");
 }
@@ -95,4 +114,21 @@ export async function listInvocations(id: number, limit = 20) {
   return apiRequest<InvocationListItem[]>(
     `/functions/${id}/invocations?limit=${limit}`,
   );
+}
+
+export async function getFunction(id: number) {
+  return apiRequest<FunctionDetail>(`/functions/${id}`);
+}
+
+export async function createFunction(body: CreateFunctionRequest) {
+  return apiRequest<FunctionDetail>(`/functions`, {
+    method: "POST",
+    body,
+  });
+}
+
+export async function deleteFunction(id: number) {
+  return apiRequest<{ message?: string }>(`/functions/${id}`, {
+    method: "DELETE",
+  });
 }

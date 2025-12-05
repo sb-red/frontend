@@ -15,7 +15,13 @@ export type SoftGateFunction = {
 export const defaultCodeByLanguage: Record<Language, string> = {
   python: `def handler(event):
     payload = event.get("payload", {})
-    return {"status": "ok", "lang": "python", "echo": payload}
+    user = payload.get("user", "world")
+    return {
+        "status": "ok",
+        "lang": "python",
+        "echo": payload,
+        "message": f"Hello, {user}!"
+    }
 `,
   node: `exports.handler = async (event) => {
   const payload = event?.payload ?? {};
@@ -60,6 +66,9 @@ type FunctionStore = {
   setSelected: (id: number) => void;
   setCode: (code: string) => void;
   changeLanguage: (language: Language) => void;
+  upsertFunction: (fn: SoftGateFunction) => void;
+  removeFunction: (id: number) => void;
+  mergeFunction: (id: number, partial: Partial<SoftGateFunction>) => void;
 };
 
 export const useFunctionStore = create<FunctionStore>((set) => ({
@@ -100,4 +109,38 @@ export const useFunctionStore = create<FunctionStore>((set) => ({
         ),
       };
     }),
+  upsertFunction: (fn) =>
+    set((state) => {
+      const exists = state.functions.find((item) => item.id === fn.id);
+      if (exists) {
+        return {
+          functions: state.functions.map((item) =>
+            item.id === fn.id ? { ...item, ...fn } : item,
+          ),
+          selectedId: state.selectedId ?? fn.id,
+        };
+      }
+      return {
+        functions: [...state.functions, fn],
+        selectedId: fn.id,
+      };
+    }),
+  removeFunction: (id) =>
+    set((state) => {
+      const filtered = state.functions.filter((fn) => fn.id !== id);
+      const nextSelected =
+        state.selectedId === id
+          ? filtered[0]?.id ?? null
+          : state.selectedId;
+      return {
+        functions: filtered,
+        selectedId: nextSelected,
+      };
+    }),
+  mergeFunction: (id, partial) =>
+    set((state) => ({
+      functions: state.functions.map((fn) =>
+        fn.id === id ? { ...fn, ...partial } : fn,
+      ),
+    })),
 }));
