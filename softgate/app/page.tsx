@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -153,6 +153,7 @@ export default function Home() {
   const [runDurationMs, setRunDurationMs] = useState<number | null>(null);
   const [historyRows, setHistoryRows] = useState<InvocationListItem[]>([]);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const pollRef = useRef<number | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createName, setCreateName] = useState("");
@@ -162,6 +163,7 @@ export default function Home() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [draftCounter, setDraftCounter] = useState(0);
+  const lastFetchedFunctionId = useRef<number | null>(null);
 
   const languageOptions = useMemo(
     () =>
@@ -178,12 +180,12 @@ export default function Home() {
     return map;
   }, [functions]);
 
-  const mapRuntimeToLanguage = (runtime: string | undefined): Language => {
+  const mapRuntimeToLanguage = useCallback((runtime: string | undefined): Language => {
     const normalized = runtime?.toLowerCase() ?? "";
     if (normalized.includes("py")) return "python";
     if (normalized.includes("go")) return "go";
     return "node";
-  };
+  }, []);
 
   const parsePayloadSafely = () => {
     try {
@@ -229,7 +231,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [setFunctions]);
+  }, [mapRuntimeToLanguage, setFunctions]);
 
   const handleSelectFunction = (fn: SoftGateFunction) => {
     setSelected(fn.id);
@@ -513,7 +515,10 @@ export default function Home() {
 
   useEffect(() => {
     if (!selectedFunction || selectedFunction.id < 0) return;
+    if (lastFetchedFunctionId.current === selectedFunction.id) return;
     let cancelled = false;
+    lastFetchedFunctionId.current = selectedFunction.id;
+
     getFunction(selectedFunction.id)
       .then((detail) => {
         if (cancelled) return;
@@ -542,7 +547,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [mergeFunction, selectedFunction, setCode]);
+  }, [mapRuntimeToLanguage, mergeFunction, selectedFunction, setCode]);
 
 useEffect(() => {
   if (activeTab !== "history" || !selectedFunction || selectedFunction.id < 0) {
@@ -550,6 +555,8 @@ useEffect(() => {
   }
   let cancelled = false;
   setHistoryError(null);
+  setHistoryLoading(true);
+  setHistoryRows([]);
   listInvocations(selectedFunction.id, 20)
     .then((rows) => {
       if (cancelled) return;
@@ -561,6 +568,9 @@ useEffect(() => {
         error instanceof Error ? error.message : "이력 불러오기에 실패했습니다.",
       );
       setHistoryRows([]);
+    })
+    .finally(() => {
+      if (!cancelled) setHistoryLoading(false);
     });
 
   return () => {
@@ -569,7 +579,7 @@ useEffect(() => {
 }, [activeTab, selectedFunction]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted/40 via-background to-background">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-white">
       {toast && (
         <div
           className={cn(
@@ -583,23 +593,21 @@ useEffect(() => {
         </div>
       )}
       <div className="mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col gap-6 px-4 py-8 lg:px-10">
-        <header className="flex flex-col gap-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-muted-foreground md:text-base">
-            SoftGate Console
-          </p>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Serverless Function Workspace
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Phase 1 · Tailwind + shadcn/ui 기반 3단 레이아웃
+        <header className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1 rounded-full bg-gradient-to-b from-slate-800 to-slate-500" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                SoftBank
               </p>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                SoftGate Console
+              </h1>
             </div>
-            <Button variant="outline" size="sm">
-              Preview Only
-            </Button>
           </div>
+          <p className="text-sm text-muted-foreground">
+            Developer workspace for async serverless functions — clean, minimal, SoftBank-inspired.
+          </p>
         </header>
 
         <div className="grid flex-1 gap-4 auto-rows-[minmax(0,1fr)] lg:grid-cols-[2fr_5fr_3fr]">
@@ -824,7 +832,7 @@ useEffect(() => {
                     Boolean(jsonError) || isRunning || !selectedFunction || selectedFunction.id < 0
                   }
                 >
-                  {isRunning ? "실행 중..." : "실행"}
+                  {isRunning ? "실행 중..." : selectedFunction ? "실행" : "함수 선택"}
                 </Button>
                 {runMessage && (
                   <p className="text-xs text-muted-foreground">{runMessage}</p>
@@ -877,6 +885,16 @@ useEffect(() => {
 
                 {activeTab === "output" ? (
                   <div className="space-y-3">
+                    {runStatus === "fail" && (
+                      <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                        오류가 발생했습니다. 로그를 확인하세요.
+                      </div>
+                    )}
+                    {!selectedFunction && (
+                      <div className="rounded-md border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                        함수를 선택하면 실행 결과가 표시됩니다.
+                      </div>
+                    )}
                     <div className="rounded-lg border bg-card/60 p-3">
                       <p className="mb-2 text-xs font-semibold text-muted-foreground">
                         Logs
@@ -907,7 +925,15 @@ useEffect(() => {
                   </div>
                 ) : (
                   <div className="overflow-hidden rounded-lg border bg-card/60">
-                    {historyError ? (
+                    {!selectedFunction || selectedFunction.id < 0 ? (
+                      <div className="p-3 text-xs text-muted-foreground">
+                        함수를 저장한 뒤 이력이 표시됩니다.
+                      </div>
+                    ) : historyLoading ? (
+                      <div className="p-3 text-xs text-muted-foreground">
+                        이력 불러오는 중...
+                      </div>
+                    ) : historyError ? (
                       <div className="p-3 text-xs text-destructive">
                         {historyError}
                       </div>
@@ -921,43 +947,43 @@ useEffect(() => {
                           <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
                             <th className="px-3 py-2 font-semibold">Job ID</th>
                             <th className="px-3 py-2 font-semibold">Function</th>
-                          <th className="px-3 py-2 font-semibold">Status</th>
-                          <th className="px-3 py-2 font-semibold">Duration</th>
-                          <th className="px-3 py-2 font-semibold">Started</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/80">
-                        {historyRows.map((row) => {
-                          const badgeClass =
-                            (row.status ?? "").toLowerCase() === "success"
-                              ? "bg-emerald-100 text-emerald-900"
-                              : "bg-red-100 text-red-900";
-                          const fnName =
-                            functionNameMap.get(row.function_id ?? -1) ??
-                            selectedFunction?.name ??
-                            "-";
-                          return (
-                            <tr key={row.id} className="hover:bg-accent/40">
-                              <td className="px-3 py-2 font-mono">{row.id}</td>
-                              <td className="px-3 py-2">{fnName}</td>
-                              <td className="px-3 py-2">
-                                <span
-                                  className={cn(
-                                    "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                                    badgeClass,
-                                  )}
-                                >
-                                  {row.status ?? "-"}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-muted-foreground">
-                                {formatDuration(row.duration_ms)}
-                              </td>
-                              <td className="px-3 py-2 text-muted-foreground">
-                                {row.invoked_at ?? "-"}
-                              </td>
-                            </tr>
-                          );
+                            <th className="px-3 py-2 font-semibold">Status</th>
+                            <th className="px-3 py-2 font-semibold">Duration</th>
+                            <th className="px-3 py-2 font-semibold">Started</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/80">
+                          {historyRows.map((row) => {
+                            const badgeClass =
+                              (row.status ?? "").toLowerCase() === "success"
+                                ? "bg-emerald-100 text-emerald-900"
+                                : "bg-red-100 text-red-900";
+                            const fnName =
+                              functionNameMap.get(row.function_id ?? -1) ??
+                              selectedFunction?.name ??
+                              "-";
+                            return (
+                              <tr key={row.id} className="hover:bg-accent/40">
+                                <td className="px-3 py-2 font-mono">{row.id}</td>
+                                <td className="px-3 py-2">{fnName}</td>
+                                <td className="px-3 py-2">
+                                  <span
+                                    className={cn(
+                                      "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                                      badgeClass,
+                                    )}
+                                  >
+                                    {row.status ?? "-"}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">
+                                  {formatDuration(row.duration_ms)}
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">
+                                  {row.invoked_at ?? "-"}
+                                </td>
+                              </tr>
+                            );
                           })}
                         </tbody>
                       </table>
