@@ -106,17 +106,21 @@
 
 ### Phase 7: API 연동 - 실행 요청 및 비동기 Polling 구현
 
-* **Description:** (가장 중요) POST /run으로 작업을 큐에 넣고, job_id를 받아 GET /status/{job_id}를 1초마다 호출(Polling)하여 상태를 추적하는 로직을 구현한다.
+* **Description:** Swagger 기준 실제 엔드포인트와 연동한다. `POST /functions/{id}/invoke`로 실행을 요청하고 응답의 `invocation_id`를 이용해 `GET /functions/{id}/invocations/{invocationId}`를 1초 간격으로 폴링한다. 터미널 상태(Success/Fail)에서 폴링을 중단하고 결과/로그를 출력하며, `GET /functions/{id}/invocations?limit=20`으로 History 탭을 채운다.
 
 * **Estimated Time:** 4 Hours
 
 * **Acceptance Criteria:**
 
-  * [ ] 실행 버튼 클릭 시 POST 요청이 성공적으로 전송된다.
+  * [ ] 실행 버튼이 `POST /functions/{id}/invoke`로 JSON 파라미터를 전송하고 `invocation_id`를 수신한다.
 
-  * [ ] 응답받은 job_id를 이용해 폴링이 시작된다.
+  * [ ] `invocation_id`로 `GET /functions/{id}/invocations/{invocationId}`를 1초마다 호출하며 UI 배지가 Queued → Processing → Success/Fail로 갱신된다.
 
-  * [ ] 최종 상태가 Success가 되면 폴링이 멈추고 결과값이 화면에 표시된다.
+  * [ ] Success/Fail 등 터미널 상태에서 폴링이 중단되고 result/duration_ms가 Output 영역에 표시된다.
+
+  * [ ] 오류 응답 시 상태가 Fail로 전환되고 에러 메시지가 로그/배지에 노출된다.
+
+  * [ ] History 탭이 `GET /functions/{id}/invocations?limit=20` 응답으로 표시된다.
 
 ### Phase 8: 실행 상태 시각화
 
