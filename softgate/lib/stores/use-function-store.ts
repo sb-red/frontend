@@ -5,10 +5,11 @@ import { create } from "zustand";
 export type Language = "python" | "node" | "go";
 
 export type SoftGateFunction = {
-  id: string;
+  id: number;
   name: string;
   language: Language;
   code: string;
+  description?: string;
 };
 
 export const defaultCodeByLanguage: Record<Language, string> = {
@@ -33,19 +34,19 @@ func Handler(ctx context.Context, event map[string]any) (map[string]any, error) 
 
 const initialFunctions: SoftGateFunction[] = [
   {
-    id: "fn-1",
+    id: 1,
     name: "ingest-events",
     language: "python",
     code: defaultCodeByLanguage.python,
   },
   {
-    id: "fn-2",
+    id: 2,
     name: "image-resizer",
     language: "node",
     code: defaultCodeByLanguage.node,
   },
   {
-    id: "fn-3",
+    id: 3,
     name: "metrics-collector",
     language: "go",
     code: defaultCodeByLanguage.go,
@@ -54,15 +55,22 @@ const initialFunctions: SoftGateFunction[] = [
 
 type FunctionStore = {
   functions: SoftGateFunction[];
-  selectedId: string;
-  setSelected: (id: string) => void;
+  selectedId: number | null;
+  setFunctions: (functions: SoftGateFunction[]) => void;
+  setSelected: (id: number) => void;
   setCode: (code: string) => void;
   changeLanguage: (language: Language) => void;
 };
 
 export const useFunctionStore = create<FunctionStore>((set) => ({
   functions: initialFunctions,
-  selectedId: initialFunctions[0]?.id ?? "",
+  selectedId: initialFunctions[0]?.id ?? null,
+  setFunctions: (functions) =>
+    set((state) => ({
+      functions,
+      selectedId:
+        functions.length > 0 ? functions[0].id : state.selectedId ?? null,
+    })),
   setSelected: (id) =>
     set((state) => (state.selectedId === id ? state : { selectedId: id })),
   setCode: (code) =>

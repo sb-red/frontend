@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,13 @@ import {
   type SoftGateFunction,
   useFunctionStore,
 } from "@/lib/stores/use-function-store";
+import {
+  getInvocationStatus,
+  invokeFunction,
+  listFunctions,
+  listInvocations,
+  type InvocationListItem,
+} from "@/lib/api";
 import { useShallow } from "zustand/shallow";
 
 const languageMeta: Record<
@@ -83,37 +90,6 @@ const samplePayload = `{
   }
 }`;
 
-const historyRows = [
-  {
-    id: "job-2411",
-    functionName: "ingest-events",
-    status: "Success",
-    duration: "1.3s",
-    startedAt: "10:42:01",
-  },
-  {
-    id: "job-2409",
-    functionName: "image-resizer",
-    status: "Fail",
-    duration: "0.8s",
-    startedAt: "10:40:17",
-  },
-  {
-    id: "job-2407",
-    functionName: "metrics-collector",
-    status: "Success",
-    duration: "2.1s",
-    startedAt: "10:38:53",
-  },
-  {
-    id: "job-2405",
-    functionName: "image-resizer",
-    status: "Success",
-    duration: "1.0s",
-    startedAt: "10:35:22",
-  },
-];
-
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
@@ -124,7 +100,14 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 });
 
 export default function Home() {
-  const { functions, selectedId, setSelected, setCode, changeLanguage } =
+  const {
+    functions,
+    selectedId,
+    setSelected,
+    setCode,
+    changeLanguage,
+    setFunctions,
+  } =
     useFunctionStore(
       useShallow((state) => ({
         functions: state.functions,
@@ -132,10 +115,11 @@ export default function Home() {
         setSelected: state.setSelected,
         setCode: state.setCode,
         changeLanguage: state.changeLanguage,
+        setFunctions: state.setFunctions,
       })),
     );
 
-  const selectedFunction = functions.find((fn) => fn.id === selectedId);
+  const selectedFunction = functions.find((fn) => fn.id === selectedId) ?? null;
   const selectedLanguage = selectedFunction?.language ?? "python";
   const [payload, setPayload] = useState(samplePayload);
   const [jsonError, setJsonError] = useState<string | null>(null);
@@ -146,6 +130,9 @@ export default function Home() {
   const [runLogs, setRunLogs] = useState<string[]>([]);
   const [runResult, setRunResult] = useState<string>("");
   const [runDurationMs, setRunDurationMs] = useState<number | null>(null);
+  const [historyRows, setHistoryRows] = useState<InvocationListItem[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const pollRef = useRef<number | null>(null);
 
   const languageOptions = useMemo(
     () =>
@@ -155,6 +142,47 @@ export default function Home() {
       })),
     [],
   );
+
+  const mapRuntimeToLanguage = (runtime: string | undefined): Language => {
+    const normalized = runtime?.toLowerCase() ?? "";
+    if (normalized.includes("py")) return "python";
+    if (normalized.includes("go")) return "go";
+    return "node";
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFunctions = async () => {
+      try {
+        const remoteFns = await listFunctions();
+        if (cancelled) return;
+        const mapped: SoftGateFunction[] = remoteFns.map((fn) => {
+          const lang = mapRuntimeToLanguage(fn.runtime);
+          return {
+            id: fn.id,
+            name: fn.name,
+            language: lang,
+            code: defaultCodeByLanguage[lang],
+            description: fn.description,
+          };
+        });
+        if (mapped.length > 0) {
+          setFunctions(mapped);
+        }
+      } catch (error) {
+        console.error("Failed to load functions", error);
+      } finally {
+        // no-op
+      }
+    };
+
+    loadFunctions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setFunctions]);
 
   const handleSelectFunction = (fn: SoftGateFunction) => {
     setSelected(fn.id);
@@ -186,8 +214,29 @@ export default function Home() {
     }
   };
 
+  const normalizeStatus = (status?: string): RunStatus => {
+    const normalized = status?.toLowerCase() ?? "";
+    if (normalized.startsWith("queue")) return "queued";
+    if (normalized.startsWith("process")) return "processing";
+    if (normalized.startsWith("success")) return "success";
+    if (normalized.startsWith("fail") || normalized === "error") return "fail";
+    return "processing";
+  };
+
+  const clearPoll = () => {
+    if (pollRef.current !== null) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
   const handleRun = () => {
     // Validate again before run to avoid stale error state.
+    if (!selectedFunction) {
+      setRunMessage("함수를 선택하세요.");
+      return;
+    }
+
     try {
       const parsed = JSON.parse(payload);
       setJsonError(null);
@@ -196,31 +245,139 @@ export default function Home() {
       setRunLogs(["[Queued] Job accepted"]);
       setRunResult("");
       setRunDurationMs(null);
+      clearPoll();
       setIsRunning(true);
       setRunMessage("실행 요청 전송 중...");
       const startedAt = Date.now();
-      setTimeout(() => {
-        setRunStatus("processing");
-        setRunLogs((prev) => [...prev, "[Processing] Function executing..."]);
-      }, 400);
-      setTimeout(() => {
-        const duration = Date.now() - startedAt;
-        setRunStatus("success");
-        setIsRunning(false);
-        setRunDurationMs(duration);
-        setRunMessage(
-          `실행 완료 · job preview: ${parsed?.payload?.requestId ?? "demo-job"}`,
-        );
-        setRunLogs((prev) => [
-          ...prev,
-          `[Success] Completed in ${duration}ms`,
-        ]);
-        setRunResult(JSON.stringify(parsed, null, 2));
-      }, 1200);
+
+      invokeFunction(selectedFunction.id, parsed)
+        .then((invokeRes) => {
+          const status = normalizeStatus(invokeRes.status);
+          setRunStatus(status);
+          if (invokeRes.result) {
+            setRunResult(JSON.stringify(invokeRes.result, null, 2));
+          }
+          if (invokeRes.duration_ms !== undefined) {
+            setRunDurationMs(invokeRes.duration_ms);
+          }
+
+          if (!invokeRes.invocation_id) {
+            setRunLogs((prev) => [
+              ...prev,
+              "[Error] invocation_id가 응답에 없습니다.",
+            ]);
+            setRunStatus("fail");
+            setIsRunning(false);
+            setRunMessage("invocation_id 누락");
+            return;
+          }
+
+          setRunLogs((prev) => [
+            ...prev,
+            `[Invoke] id=${invokeRes.invocation_id} status=${invokeRes.status ?? "queued"}`,
+          ]);
+
+          pollRef.current = window.setInterval(async () => {
+            try {
+              const res = await getInvocationStatus(
+                selectedFunction.id,
+                invokeRes.invocation_id as number,
+              );
+              const polledStatus = normalizeStatus(res.status);
+              setRunStatus(polledStatus);
+              if (res.duration_ms !== undefined) {
+                setRunDurationMs(res.duration_ms);
+              }
+              if (res.result) {
+                setRunResult(JSON.stringify(res.result, null, 2));
+              }
+              if (res.logged_at) {
+                setRunLogs((prev) => [
+                  ...prev,
+                  `[${polledStatus}] ${res.logged_at}`,
+                ]);
+              }
+
+              if (polledStatus === "success" || polledStatus === "fail") {
+                clearPoll();
+                setIsRunning(false);
+                setRunMessage(
+                  polledStatus === "success"
+                    ? "실행 완료"
+                    : res.error_message ?? "실행 실패",
+                );
+                if (res.duration_ms === undefined) {
+                  setRunDurationMs(Date.now() - startedAt);
+                }
+              }
+            } catch (error) {
+              clearPoll();
+              setIsRunning(false);
+              setRunStatus("fail");
+              setRunMessage(
+                `폴링 실패: ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`,
+              );
+              setRunLogs((prev) => [
+                ...prev,
+                `[Error] ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`,
+              ]);
+            }
+          }, 1000);
+        })
+        .catch((error) => {
+          clearPoll();
+          setIsRunning(false);
+          setRunStatus("fail");
+          setRunMessage(
+            `실행 요청 실패: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+          );
+          setRunLogs((prev) => [
+            ...prev,
+            `[Error] ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+          ]);
+        });
     } catch {
       setJsonError("유효한 JSON 형식이 아닙니다.");
     }
   };
+
+useEffect(() => {
+  return () => {
+    clearPoll();
+  };
+}, []);
+
+useEffect(() => {
+  if (activeTab !== "history" || !selectedFunction) {
+    return;
+  }
+  let cancelled = false;
+  setHistoryError(null);
+  listInvocations(selectedFunction.id, 20)
+    .then((rows) => {
+      if (cancelled) return;
+      setHistoryRows(rows);
+    })
+    .catch((error) => {
+      if (cancelled) return;
+      setHistoryError(
+        error instanceof Error ? error.message : "이력 불러오기에 실패했습니다.",
+      );
+      setHistoryRows([]);
+    });
+
+  return () => {
+    cancelled = true;
+  };
+}, [activeTab, selectedFunction]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted/40 via-background to-background">
@@ -350,6 +507,8 @@ export default function Home() {
                   setRunLogs([]);
                   setRunResult("");
                   setRunDurationMs(null);
+                  setIsRunning(false);
+                  clearPoll();
                 }}
               >
                 Reset
@@ -471,43 +630,61 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="overflow-hidden rounded-lg border bg-card/60">
-                    <table className="min-w-full text-left text-xs">
-                      <thead className="bg-muted/80 text-foreground">
-                        <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          <th className="px-3 py-2 font-semibold">Job ID</th>
-                          <th className="px-3 py-2 font-semibold">Function</th>
-                          <th className="px-3 py-2 font-semibold">Status</th>
-                          <th className="px-3 py-2 font-semibold">Duration</th>
-                          <th className="px-3 py-2 font-semibold">Started</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/80">
-                        {historyRows.map((row) => (
-                          <tr key={row.id} className="hover:bg-accent/40">
-                            <td className="px-3 py-2 font-mono">{row.id}</td>
-                            <td className="px-3 py-2">{row.functionName}</td>
-                            <td className="px-3 py-2">
-                              <span
-                                className={cn(
-                                  "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                                  row.status === "Success"
-                                    ? "bg-emerald-100 text-emerald-900"
-                                    : "bg-red-100 text-red-900",
-                                )}
-                              >
-                                {row.status}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {row.duration}
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {row.startedAt}
-                            </td>
+                    {historyError ? (
+                      <div className="p-3 text-xs text-destructive">
+                        {historyError}
+                      </div>
+                    ) : historyRows.length === 0 ? (
+                      <div className="p-3 text-xs text-muted-foreground">
+                        이력이 없습니다. 실행 후 기록이 표시됩니다.
+                      </div>
+                    ) : (
+                      <table className="min-w-full text-left text-xs">
+                        <thead className="bg-muted/80 text-foreground">
+                          <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            <th className="px-3 py-2 font-semibold">Job ID</th>
+                            <th className="px-3 py-2 font-semibold">Function</th>
+                            <th className="px-3 py-2 font-semibold">Status</th>
+                            <th className="px-3 py-2 font-semibold">Duration</th>
+                            <th className="px-3 py-2 font-semibold">Started</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-border/80">
+                          {historyRows.map((row) => {
+                            const badgeClass =
+                              (row.status ?? "").toLowerCase() === "success"
+                                ? "bg-emerald-100 text-emerald-900"
+                                : "bg-red-100 text-red-900";
+                            return (
+                              <tr key={row.id} className="hover:bg-accent/40">
+                                <td className="px-3 py-2 font-mono">{row.id}</td>
+                                <td className="px-3 py-2">
+                                  {selectedFunction?.name ?? "-"}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <span
+                                    className={cn(
+                                      "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                                      badgeClass,
+                                    )}
+                                  >
+                                    {row.status ?? "-"}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">
+                                  {row.duration_ms !== undefined
+                                    ? `${row.duration_ms}ms`
+                                    : "-"}
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">
+                                  {row.invoked_at ?? "-"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
                 )}
               </div>

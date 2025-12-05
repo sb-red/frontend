@@ -112,15 +112,15 @@
 
 * **Acceptance Criteria:**
 
-  * [ ] 실행 버튼이 `POST /functions/{id}/invoke`로 JSON 파라미터를 전송하고 `invocation_id`를 수신한다.
+  * [✓] 실행 버튼이 `POST /functions/{id}/invoke`로 JSON 파라미터를 전송하고 `invocation_id`를 수신한다.
 
-  * [ ] `invocation_id`로 `GET /functions/{id}/invocations/{invocationId}`를 1초마다 호출하며 UI 배지가 Queued → Processing → Success/Fail로 갱신된다.
+  * [✓] `invocation_id`로 `GET /functions/{id}/invocations/{invocationId}`를 1초마다 호출하며 UI 배지가 Queued → Processing → Success/Fail로 갱신된다.
 
-  * [ ] Success/Fail 등 터미널 상태에서 폴링이 중단되고 result/duration_ms가 Output 영역에 표시된다.
+  * [✓] Success/Fail 등 터미널 상태에서 폴링이 중단되고 result/duration_ms가 Output 영역에 표시된다.
 
-  * [ ] 오류 응답 시 상태가 Fail로 전환되고 에러 메시지가 로그/배지에 노출된다.
+  * [✓] 오류 응답 시 상태가 Fail로 전환되고 에러 메시지가 로그/배지에 노출된다.
 
-  * [ ] History 탭이 `GET /functions/{id}/invocations?limit=20` 응답으로 표시된다.
+  * [✓] History 탭이 `GET /functions/{id}/invocations?limit=20` 응답으로 표시된다.
 
 ### Phase 8: 실행 상태 시각화
 
