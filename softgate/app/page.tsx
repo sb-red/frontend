@@ -81,6 +81,12 @@ const statusMeta: Record<
   },
 };
 
+const formatDuration = (ms?: number | null) => {
+  if (ms === undefined || ms === null) return "-";
+  if (ms < 1000) return `${ms} ms`;
+  return `${(ms / 1000).toFixed(2)} s`;
+};
+
 const samplePayload = `{
   "event": "ping",
   "payload": {
@@ -592,11 +598,10 @@ useEffect(() => {
                       )}
                     >
                       {statusMeta[runStatus].label}
-                      {runDurationMs !== null && (
-                        <span className="text-[11px] font-medium text-foreground/70">
-                          {runDurationMs}ms
-                        </span>
-                      )}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                      Duration
+                      <span className="text-foreground">{formatDuration(runDurationMs)}</span>
                     </span>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://43.202.6.15:3000/api";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://43.202.6.15/api";
 
 type FetchOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
