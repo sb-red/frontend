@@ -96,6 +96,9 @@ const runtimeForLanguage: Record<Language, string> = {
   go: "go",
 };
 
+const MAX_POLL_ATTEMPTS = 60; // ~60s with 1s interval
+const MAX_STUCK_ATTEMPTS = 30; // ~30s without status change
+
 const samplePayload = `{
   "event": "ping",
   "payload": {
@@ -164,7 +167,11 @@ export default function Home() {
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [draftCounter, setDraftCounter] = useState(0);
   const lastFetchedFunctionId = useRef<number | null>(null);
+  const pollAttemptsRef = useRef(0);
   const [search, setSearch] = useState("");
+  const runTimeoutRef = useRef<number | null>(null);
+  const lastStatusRef = useRef<RunStatus | null>(null);
+  const stuckCountRef = useRef(0);
 
   const languageOptions = useMemo(
     () =>
@@ -381,10 +388,11 @@ export default function Home() {
 
   const normalizeStatus = (status?: string): RunStatus => {
     const normalized = status?.toLowerCase() ?? "";
-    if (normalized.startsWith("queue")) return "queued";
-    if (normalized.startsWith("process")) return "processing";
-    if (normalized.startsWith("success")) return "success";
-    if (normalized.startsWith("fail") || normalized === "error") return "fail";
+    if (normalized.includes("queue")) return "queued";
+    if (normalized.includes("process") || normalized.includes("run")) return "processing";
+    if (normalized.includes("success") || normalized.includes("complete") || normalized.includes("done"))
+      return "success";
+    if (normalized.includes("fail") || normalized.includes("error")) return "fail";
     return "processing";
   };
 
@@ -392,6 +400,13 @@ export default function Home() {
     if (pollRef.current !== null) {
       clearInterval(pollRef.current);
       pollRef.current = null;
+    }
+    pollAttemptsRef.current = 0;
+    stuckCountRef.current = 0;
+    lastStatusRef.current = null;
+    if (runTimeoutRef.current !== null) {
+      clearTimeout(runTimeoutRef.current);
+      runTimeoutRef.current = null;
     }
   };
 
@@ -415,8 +430,21 @@ export default function Home() {
       setRunResult("");
       setRunDurationMs(null);
       clearPoll();
+      pollAttemptsRef.current = 0;
+      stuckCountRef.current = 0;
+      lastStatusRef.current = null;
       setIsRunning(true);
       setRunMessage("실행 요청 전송 중...");
+      if (runTimeoutRef.current !== null) {
+        clearTimeout(runTimeoutRef.current);
+      }
+      runTimeoutRef.current = window.setTimeout(() => {
+        clearPoll();
+        setIsRunning(false);
+        setRunStatus("fail");
+        setRunMessage("실행 시간 초과");
+        setRunLogs((prev) => [...prev, "[Error] 실행 시간 초과"]);
+      }, 60000);
       const startedAt = Date.now();
 
       invokeFunction(selectedFunction.id, parsed)
@@ -448,11 +476,27 @@ export default function Home() {
 
           pollRef.current = window.setInterval(async () => {
             try {
+              pollAttemptsRef.current += 1;
+              if (pollAttemptsRef.current >= MAX_POLL_ATTEMPTS) {
+                clearPoll();
+                setIsRunning(false);
+                setRunStatus("fail");
+                setRunMessage("폴링 타임아웃");
+                setRunLogs((prev) => [...prev, "[Error] 폴링 타임아웃"]);
+                return;
+              }
+
               const res = await getInvocationStatus(
                 selectedFunction.id,
                 invokeRes.invocation_id as number,
               );
-              const polledStatus = normalizeStatus(res.status);
+              let polledStatus = normalizeStatus(res.status);
+              if (polledStatus === "processing" && res.result) {
+                polledStatus = "success";
+              }
+              if (polledStatus === "processing" && res.error_message) {
+                polledStatus = "fail";
+              }
               setRunStatus(polledStatus);
               if (res.duration_ms !== undefined) {
                 setRunDurationMs(res.duration_ms);
@@ -465,6 +509,25 @@ export default function Home() {
                   ...prev,
                   `[${polledStatus}] ${res.logged_at}`,
                 ]);
+              }
+
+              if (polledStatus === lastStatusRef.current) {
+                stuckCountRef.current += 1;
+              } else {
+                stuckCountRef.current = 0;
+              }
+              lastStatusRef.current = polledStatus;
+
+              if (
+                (polledStatus === "processing" || polledStatus === "queued") &&
+                stuckCountRef.current >= MAX_STUCK_ATTEMPTS
+              ) {
+                clearPoll();
+                setIsRunning(false);
+                setRunStatus("fail");
+                setRunMessage("상태 변화 없이 대기 시간 초과");
+                setRunLogs((prev) => [...prev, "[Error] 상태 변화 없음으로 중단"]);
+                return;
               }
 
               if (polledStatus === "success" || polledStatus === "fail") {
@@ -592,6 +655,9 @@ useEffect(() => {
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(14,165,233,0.08),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_30%)]" />
+      <div className="pointer-events-none absolute -right-16 top-10 h-48 w-48 rounded-full bg-red-400/25 blur-3xl mix-blend-screen" />
+      <div className="pointer-events-none absolute -left-10 bottom-12 h-56 w-56 rounded-full bg-emerald-300/20 blur-3xl mix-blend-screen" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_10%,rgba(255,255,255,0.25),transparent_30%),radial-gradient(circle_at_70%_90%,rgba(255,255,255,0.2),transparent_35%)]" />
       {toast && (
         <div
           className={cn(
@@ -621,6 +687,9 @@ useEffect(() => {
             <div className="hidden items-center gap-2 rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 text-xs font-medium text-slate-500 shadow-sm backdrop-blur md:flex">
               <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.25)]" />
               Live Workspace
+              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-600">
+                <span aria-hidden>🎄</span> Holiday
+              </span>
             </div>
           </div>
           <p className="text-sm text-slate-600">
@@ -831,7 +900,7 @@ useEffect(() => {
                 Reset
               </Button>
             </CardHeader>
-            <CardContent className="flex-1 space-y-4">
+            <CardContent className="flex h-full flex-col space-y-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium">Payload 미리보기</p>
                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-900 shadow-inner">
@@ -875,7 +944,7 @@ useEffect(() => {
                   <p className="text-xs text-muted-foreground">{runMessage}</p>
                 )}
               </div>
-              <div className="space-y-3 border-t pt-4">
+              <div className="flex flex-1 flex-col space-y-3 border-t pt-4 min-h-0">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-1 rounded-md bg-muted/60 p-1 text-sm">
                     <button
@@ -921,7 +990,10 @@ useEffect(() => {
                 </div>
 
                 {activeTab === "output" ? (
-                  <div className="space-y-3">
+                  <div
+                    className="flex flex-1 min-h-0 w-full flex-col gap-3"
+                    style={{ scrollbarGutter: "stable both-edges" }}
+                  >
                     {runStatus === "fail" && (
                       <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                         오류가 발생했습니다. 로그를 확인하세요.
@@ -932,36 +1004,41 @@ useEffect(() => {
                         함수를 선택하면 실행 결과가 표시됩니다.
                       </div>
                     )}
-                    <div className="rounded-lg border bg-card/60 p-3">
-                      <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                        Logs
-                      </p>
-                      <div className="space-y-1 rounded-md bg-background/60 p-2 font-mono text-xs leading-relaxed text-foreground/80 max-h-40 overflow-auto">
-                        {runLogs.length === 0 ? (
-                          <p className="text-muted-foreground">No logs yet.</p>
-                        ) : (
-                          runLogs.map((line, idx) => (
-                            <p
-                              key={idx}
-                              className="whitespace-pre-wrap break-all"
-                            >
-                              {line}
-                            </p>
-                          ))
-                        )}
+                    <div className="grid h-full min-h-0 w-full grid-rows-[1fr_1fr] gap-3">
+                      <div className="flex min-h-0 min-w-0 flex-col rounded-lg border bg-card/60 p-3">
+                        <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                          Logs
+                        </p>
+                        <div className="mt-1 flex-1 overflow-auto rounded-md border border-border/60 bg-card/80 p-2 font-mono text-xs leading-relaxed text-foreground/80">
+                          {runLogs.length === 0 ? (
+                            <p className="text-muted-foreground">No logs yet.</p>
+                          ) : (
+                            runLogs.map((line, idx) => (
+                              <p
+                                key={idx}
+                                className="whitespace-pre-wrap break-all"
+                              >
+                                {line}
+                              </p>
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="rounded-lg border bg-card/60 p-3">
-                      <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                        Result
-                      </p>
-                      <pre className="max-h-56 overflow-auto rounded-md bg-background/60 p-3 text-xs leading-relaxed text-foreground/80">
-                        {runResult || "결과가 아직 없습니다. 실행 후 결과가 표시됩니다."}
-                      </pre>
+                      <div className="flex min-h-0 min-w-0 flex-col rounded-lg border bg-card/60 p-3">
+                        <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                          Result
+                        </p>
+                        <pre className="mt-1 flex-1 overflow-auto rounded-md border border-border/60 bg-card/80 p-3 text-xs leading-relaxed text-foreground/80">
+                          {runResult || "결과가 아직 없습니다. 실행 후 결과가 표시됩니다."}
+                        </pre>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="overflow-hidden rounded-lg border bg-card/60">
+                  <div
+                    className="flex flex-1 min-h-0 w-full flex-col overflow-hidden rounded-lg border bg-card/60 overflow-y-scroll"
+                    style={{ scrollbarGutter: "stable both-edges" }}
+                  >
                     {!selectedFunction || selectedFunction.id < 0 ? (
                       <div className="p-3 text-xs text-muted-foreground">
                         함수를 저장한 뒤 이력이 표시됩니다.
@@ -979,51 +1056,55 @@ useEffect(() => {
                         이력이 없습니다. 실행 후 기록이 표시됩니다.
                       </div>
                     ) : (
-                      <table className="min-w-full text-left text-xs">
-                        <thead className="bg-muted/80 text-foreground">
-                          <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            <th className="px-3 py-2 font-semibold">Job ID</th>
-                            <th className="px-3 py-2 font-semibold">Function</th>
-                            <th className="px-3 py-2 font-semibold">Status</th>
-                            <th className="px-3 py-2 font-semibold">Duration</th>
-                            <th className="px-3 py-2 font-semibold">Started</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/80">
-                          {historyRows.map((row) => {
-                            const badgeClass =
-                              (row.status ?? "").toLowerCase() === "success"
-                                ? "bg-emerald-100 text-emerald-900"
-                                : "bg-red-100 text-red-900";
-                            const fnName =
-                              functionNameMap.get(row.function_id ?? -1) ??
-                              selectedFunction?.name ??
-                              "-";
-                            return (
-                              <tr key={row.id} className="hover:bg-accent/40">
-                                <td className="px-3 py-2 font-mono">{row.id}</td>
-                                <td className="px-3 py-2">{fnName}</td>
-                                <td className="px-3 py-2">
-                                  <span
-                                    className={cn(
-                                      "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                                      badgeClass,
-                                    )}
-                                  >
-                                    {row.status ?? "-"}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-2 text-muted-foreground">
-                                  {formatDuration(row.duration_ms)}
-                                </td>
-                                <td className="px-3 py-2 text-muted-foreground">
-                                  {row.invoked_at ?? "-"}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                      <div className="h-full overflow-auto overflow-x-auto">
+                        <table className="min-w-full table-fixed text-left text-xs">
+                          <thead className="bg-muted/80 text-foreground sticky top-0">
+                            <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              <th className="px-3 py-2 font-semibold">Function</th>
+                              <th className="px-3 py-2 font-semibold">Status</th>
+                              <th className="px-3 py-2 font-semibold">Duration</th>
+                              <th className="px-3 py-2 font-semibold">Started</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border/80">
+                            {historyRows.map((row) => {
+                              const badgeClass =
+                                (row.status ?? "").toLowerCase() === "success"
+                                  ? "bg-emerald-100 text-emerald-900"
+                                  : "bg-red-100 text-red-900";
+                              const fnName =
+                                functionNameMap.get(row.function_id ?? -1) ??
+                                selectedFunction?.name ??
+                                "-";
+                              const started =
+                                row.invoked_at && row.invoked_at.length >= 19
+                                  ? row.invoked_at.slice(0, 19)
+                                  : row.invoked_at ?? "-";
+                              return (
+                                <tr key={row.id} className="hover:bg-accent/40">
+                                  <td className="px-3 py-2">{fnName}</td>
+                                  <td className="px-3 py-2">
+                                    <span
+                                      className={cn(
+                                        "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                                        badgeClass,
+                                      )}
+                                    >
+                                      {row.status ?? "-"}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 text-muted-foreground">
+                                    {formatDuration(row.duration_ms)}
+                                  </td>
+                                  <td className="px-3 py-2 text-muted-foreground">
+                                    {started}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </div>
                 )}
