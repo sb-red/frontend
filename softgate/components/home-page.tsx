@@ -208,6 +208,7 @@ export default function HomePage({
   const stuckCountRef = useRef(0);
   const remoteEnabled = !disableRemoteFetch;
   const [scheduleTime, setScheduleTime] = useState("");
+  const [schedulePayload, setSchedulePayload] = useState(samplePayload);
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [schedulesError, setSchedulesError] = useState<string | null>(null);
@@ -388,9 +389,20 @@ export default function HomePage({
       showToast("error", "미래 시간으로만 예약할 수 있습니다.");
       return;
     }
+    let parsedPayload: Record<string, unknown> | undefined;
+    const trimmed = schedulePayload.trim();
+    if (trimmed) {
+      try {
+        parsedPayload = JSON.parse(trimmed) as Record<string, unknown>;
+      } catch {
+        showToast("error", "Payload는 JSON이어야 합니다.");
+        return;
+      }
+    }
     const iso = parsedDate.toISOString();
     createSchedule(targetFn.id, {
       scheduled_at: iso,
+      payload: parsedPayload,
     })
       .then((res) => {
         setSchedules((prev) => [...prev, res]);
@@ -407,6 +419,7 @@ export default function HomePage({
     functions,
     registerScheduleTimer,
     remoteEnabled,
+    schedulePayload,
     scheduleTime,
     selectedId,
     showToast,
@@ -1380,9 +1393,9 @@ export default function HomePage({
                 </span>
               )}
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+        </CardHeader>
+        <CardContent className="space-y-6">
+            <div className="grid gap-4 lg:grid-cols-2">
               <div className="space-y-3 rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -1396,7 +1409,7 @@ export default function HomePage({
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-3 w-full">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       실행 일시
@@ -1405,29 +1418,41 @@ export default function HomePage({
                       type="datetime-local"
                       value={scheduleTime}
                       onChange={(e) => setScheduleTime(e.target.value)}
-                      className="h-10"
+                      className="h-10 w-full"
                     />
                     <p className="text-[11px] text-muted-foreground">
                       현재 시각 이후로만 설정할 수 있습니다.
                     </p>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <Button className="flex-1" onClick={handleScheduleAdd}>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Payload (선택)
+                    </label>
+                    <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-inner">
+                      <MonacoEditor
+                        height="180px"
+                        language="json"
+                        value={schedulePayload}
+                        onChange={(value) => setSchedulePayload(value ?? "")}
+                        theme="vs-dark"
+                        options={{
+                          minimap: { enabled: false },
+                          fontSize: 12,
+                          scrollBeyondLastLine: false,
+                          renderWhitespace: "selection",
+                          automaticLayout: true,
+                        }}
+                        className="monaco-input"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      비워두면 payload는 전송하지 않습니다.
+                    </p>
+                  </div>
+
+                  <Button className="w-full h-10 text-[15px]" onClick={handleScheduleAdd}>
                     예약 생성
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      const dt = new Date(Date.now() + 10 * 60 * 1000);
-                      const localIso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
-                        .toISOString()
-                        .slice(0, 16);
-                      setScheduleTime(localIso);
-                    }}
-                  >
-                    다시 입력
                   </Button>
                 </div>
               </div>
@@ -1455,27 +1480,41 @@ export default function HomePage({
                     </div>
                   ) : schedules.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-muted-foreground">
-                      예약된 실행이 없습니다. 왼쪽에서 일시와 payload를 지정해 추가하세요.
+                      예약된 실행이 없습니다. 왼쪽에서 실행 시점을 추가하세요.
                     </div>
                   ) : (
                     schedules
                       .slice()
-                      .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+                      .sort((a, b) => b.scheduled_at.localeCompare(a.scheduled_at))
                       .map((item) => {
+                        const fnName = selectedFunction?.name ?? "알 수 없음";
+                        const isPast = new Date(item.scheduled_at).getTime() <= Date.now();
+                        const statusLabel = isPast ? "실행됨" : "대기";
+                        const statusClass = isPast
+                          ? "bg-emerald-100 text-emerald-900 border-emerald-200"
+                          : "bg-amber-100 text-amber-900 border-amber-200";
                         return (
                           <div
                             key={item.id}
-                      className="grid grid-cols-[1fr_auto] gap-3 rounded-lg border border-slate-200 bg-white/80 px-3 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.05)]"
-                    >
-                      <div className="space-y-1">
-                        <p className="text-base font-semibold text-slate-900">
-                          실행 예정: {formatScheduleTime(item.scheduled_at)}
-                        </p>
-                        <p className="text-[12px] text-muted-foreground">
-                          예약 ID: {item.id}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
+                            className="grid grid-cols-[1fr_auto] gap-3 rounded-lg border border-slate-200 bg-white/80 px-3 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.05)]"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
+                                <span>{fnName}</span>
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                                    statusClass,
+                                  )}
+                                >
+                                  {statusLabel}
+                                </span>
+                              </div>
+                              <p className="text-[12px] text-muted-foreground">
+                                ID: {item.id} · {formatScheduleTime(item.scheduled_at)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -1491,8 +1530,8 @@ export default function HomePage({
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
       </div>
     </div>
   );
