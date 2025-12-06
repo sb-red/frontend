@@ -139,6 +139,9 @@ type ScheduleItem = {
   id: number;
   scheduled_at: string;
   payload?: Record<string, unknown>;
+  function_id?: number;
+  function_name?: string;
+  status?: string;
 };
 
 const MAX_POLL_ATTEMPTS = 60; // ~60s with 1s interval
@@ -213,7 +216,6 @@ export default function HomePage({
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [schedulesError, setSchedulesError] = useState<string | null>(null);
   const scheduleTimersRef = useRef<Map<number, number>>(new Map());
-
   const showToast = useCallback(
     (type: "success" | "error", message: string) => {
       setToast({ type, message });
@@ -336,16 +338,190 @@ export default function HomePage({
     scheduleTimersRef.current.clear();
   }, []);
 
+  const normalizeStatus = useCallback((status?: string): RunStatus => {
+    const normalized = status?.toLowerCase() ?? "";
+    if (normalized.includes("queue")) return "queued";
+    if (normalized.includes("process") || normalized.includes("run")) return "processing";
+    if (normalized.includes("success") || normalized.includes("complete") || normalized.includes("done"))
+      return "success";
+    if (normalized.includes("fail") || normalized.includes("error")) return "fail";
+    return "processing";
+  }, []);
+
+  const clearPoll = useCallback(() => {
+    if (pollRef.current !== null) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    pollAttemptsRef.current = 0;
+    stuckCountRef.current = 0;
+    lastStatusRef.current = null;
+    if (runTimeoutRef.current !== null) {
+      clearTimeout(runTimeoutRef.current);
+      runTimeoutRef.current = null;
+    }
+  }, []);
+
   const logScheduleStart = useCallback(
     (item: ScheduleItem) => {
       setActiveTab("output");
+      setRunStatus("queued");
+      setRunResult("");
+      setRunDurationMs(null);
+      setIsRunning(true);
+      setRunMessage("예약 실행이 시작되었습니다.");
+      const targetFnId = item.function_id ?? selectedFunction?.id ?? null;
       setRunLogs((prev) => [
         ...prev,
         `[Schedule] ${new Date(item.scheduled_at).toISOString()} 실행 시작 (id=${item.id})`,
       ]);
-      setRunMessage("예약 실행이 시작되었습니다.");
+
+      if (!remoteEnabled || !targetFnId || targetFnId < 0) {
+        setIsRunning(false);
+        return;
+      }
+
+      clearPoll();
+      pollAttemptsRef.current = 0;
+      stuckCountRef.current = 0;
+      lastStatusRef.current = null;
+
+      const startedAt = Date.now();
+      const payloadToSend = item.payload ?? {};
+
+      invokeFunction(targetFnId, payloadToSend)
+        .then((invokeRes) => {
+          const status = normalizeStatus(invokeRes.status);
+          setRunStatus(status);
+          if (invokeRes.result) {
+            setRunResult(JSON.stringify(invokeRes.result, null, 2));
+          }
+          if (invokeRes.duration_ms !== undefined) {
+            setRunDurationMs(invokeRes.duration_ms);
+          }
+
+          if (!invokeRes.invocation_id) {
+            setRunLogs((prev) => [
+              ...prev,
+              "[Schedule] invocation_id가 응답에 없습니다.",
+            ]);
+            setRunStatus("fail");
+            setIsRunning(false);
+            setRunMessage("invocation_id 누락");
+            return;
+          }
+
+          setRunLogs((prev) => [
+            ...prev,
+            `[Invoke] id=${invokeRes.invocation_id} status=${invokeRes.status ?? "queued"}`,
+          ]);
+
+          pollRef.current = window.setInterval(async () => {
+            try {
+              pollAttemptsRef.current += 1;
+              if (pollAttemptsRef.current >= MAX_POLL_ATTEMPTS) {
+                clearPoll();
+                setIsRunning(false);
+                setRunStatus("fail");
+                setRunMessage("폴링 타임아웃");
+                setRunLogs((prev) => [...prev, "[Error] 폴링 타임아웃"]);
+                return;
+              }
+
+              const res = await getInvocationStatus(
+                targetFnId,
+                invokeRes.invocation_id as number,
+              );
+              let polledStatus = normalizeStatus(res.status);
+              if (polledStatus === "processing" && res.result) {
+                polledStatus = "success";
+              }
+              if (polledStatus === "processing" && res.error_message) {
+                polledStatus = "fail";
+              }
+              setRunStatus(polledStatus);
+              if (res.duration_ms !== undefined) {
+                setRunDurationMs(res.duration_ms);
+              }
+              if (res.result) {
+                setRunResult(JSON.stringify(res.result, null, 2));
+              } else if (res.error_message) {
+                setRunResult(res.error_message);
+              }
+              if (res.logged_at) {
+                setRunLogs((prev) => [
+                  ...prev,
+                  `[${polledStatus}] ${res.logged_at}`,
+                ]);
+              }
+
+              if (polledStatus === lastStatusRef.current) {
+                stuckCountRef.current += 1;
+              } else {
+                stuckCountRef.current = 0;
+              }
+              lastStatusRef.current = polledStatus;
+
+              if (
+                (polledStatus === "processing" || polledStatus === "queued") &&
+                stuckCountRef.current >= MAX_STUCK_ATTEMPTS
+              ) {
+                clearPoll();
+                setIsRunning(false);
+                setRunStatus("fail");
+                setRunMessage("상태 변화 없이 대기 시간 초과");
+                setRunLogs((prev) => [...prev, "[Error] 상태 변화 없음으로 중단"]);
+                return;
+              }
+
+              if (polledStatus === "success" || polledStatus === "fail") {
+                clearPoll();
+                setIsRunning(false);
+                setRunMessage(
+                  polledStatus === "success"
+                    ? "예약 실행 완료"
+                    : res.error_message ?? "실행 실패",
+                );
+                if (res.duration_ms === undefined) {
+                  setRunDurationMs(Date.now() - startedAt);
+                }
+              }
+            } catch (error) {
+              clearPoll();
+              setIsRunning(false);
+              setRunStatus("fail");
+              setRunMessage(
+                `폴링 실패: ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`,
+              );
+              setRunLogs((prev) => [
+                ...prev,
+                `[Error] ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`,
+              ]);
+            }
+          }, 1000);
+        })
+        .catch((error) => {
+          clearPoll();
+          setIsRunning(false);
+          setRunStatus("fail");
+          setRunMessage(
+            `실행 요청 실패: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+          );
+          setRunLogs((prev) => [
+            ...prev,
+            `[Error] ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+          ]);
+        });
     },
-    [],
+    [clearPoll, normalizeStatus, remoteEnabled, selectedFunction],
   );
 
   const registerScheduleTimer = useCallback(
@@ -629,30 +805,6 @@ export default function HomePage({
     }
   };
 
-  const normalizeStatus = (status?: string): RunStatus => {
-    const normalized = status?.toLowerCase() ?? "";
-    if (normalized.includes("queue")) return "queued";
-    if (normalized.includes("process") || normalized.includes("run")) return "processing";
-    if (normalized.includes("success") || normalized.includes("complete") || normalized.includes("done"))
-      return "success";
-    if (normalized.includes("fail") || normalized.includes("error")) return "fail";
-    return "processing";
-  };
-
-  const clearPoll = () => {
-    if (pollRef.current !== null) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-    pollAttemptsRef.current = 0;
-    stuckCountRef.current = 0;
-    lastStatusRef.current = null;
-    if (runTimeoutRef.current !== null) {
-      clearTimeout(runTimeoutRef.current);
-      runTimeoutRef.current = null;
-    }
-  };
-
   const handleRun = () => {
     if (!remoteEnabled) {
       setRunMessage("백엔드 API 연결이 설정되지 않았습니다.");
@@ -831,7 +983,7 @@ export default function HomePage({
     return () => {
       clearPoll();
     };
-  }, []);
+  }, [clearPoll]);
 
   useEffect(() => {
     clearPoll();
@@ -843,7 +995,7 @@ export default function HomePage({
     setRunMessage(null);
     setHistoryRows([]);
     setHistoryError(null);
-  }, [selectedFunction?.id]);
+  }, [clearPoll, selectedFunction?.id]);
 
   useEffect(() => {
     if (!remoteEnabled) return;
