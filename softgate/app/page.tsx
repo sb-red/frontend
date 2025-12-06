@@ -164,6 +164,7 @@ export default function Home() {
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [draftCounter, setDraftCounter] = useState(0);
   const lastFetchedFunctionId = useRef<number | null>(null);
+  const [search, setSearch] = useState("");
 
   const languageOptions = useMemo(
     () =>
@@ -179,6 +180,16 @@ export default function Home() {
     functions.forEach((fn) => map.set(fn.id, fn.name));
     return map;
   }, [functions]);
+
+  const filteredFunctions = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return functions;
+    return functions.filter((fn) => {
+      const name = fn.name.toLowerCase();
+      const desc = fn.description?.toLowerCase() ?? "";
+      return name.includes(term) || desc.includes(term);
+    });
+  }, [functions, search]);
 
   const mapRuntimeToLanguage = useCallback((runtime: string | undefined): Language => {
     const normalized = runtime?.toLowerCase() ?? "";
@@ -630,7 +641,19 @@ useEffect(() => {
               </Button>
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
-              <Input placeholder="Search functions" className="h-10" />
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search functions"
+                  className="h-10"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                {search && (
+                  <Button variant="ghost" size="sm" onClick={() => setSearch("")}>
+                    Clear
+                  </Button>
+                )}
+              </div>
               {showCreateForm && (
                 <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
                   <Input
@@ -685,7 +708,12 @@ useEffect(() => {
                 </div>
               )}
               <div className="space-y-2">
-                {functions.map((fn) => {
+                {filteredFunctions.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
+                    검색 결과가 없습니다.
+                  </div>
+                )}
+                {filteredFunctions.map((fn) => {
                   const meta = languageMeta[fn.language];
                   const isActive = selectedId === fn.id;
                   return (
