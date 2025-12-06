@@ -588,6 +588,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    clearPoll();
+    setIsRunning(false);
+    setRunStatus("idle");
+    setRunLogs([]);
+    setRunResult("");
+    setRunDurationMs(null);
+    setRunMessage(null);
+    setHistoryRows([]);
+    setHistoryError(null);
+  }, [selectedFunction?.id]);
+
+  useEffect(() => {
     if (!selectedFunction || selectedFunction.id < 0) return;
     if (lastFetchedFunctionId.current === selectedFunction.id) return;
     let cancelled = false;
