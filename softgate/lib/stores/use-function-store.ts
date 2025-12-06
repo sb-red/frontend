@@ -2,7 +2,16 @@
 
 import { create } from "zustand";
 
-export type Language = "python" | "node" | "go";
+export type Language =
+  | "python"
+  | "pypy3"
+  | "node"
+  | "go"
+  | "java11"
+  | "java17"
+  | "java21"
+  | "swift"
+  | "kotlin";
 
 export type SoftGateFunction = {
   id: number;
@@ -23,6 +32,16 @@ export const defaultCodeByLanguage: Record<Language, string> = {
         "message": f"Hello, {user}!"
     }
 `,
+  pypy3: `def handler(event):
+    payload = event.get("payload", {})
+    user = payload.get("user", "world")
+    return {
+        "status": "ok",
+        "lang": "pypy3",
+        "echo": payload,
+        "message": f"Hello, {user} (PyPy3)!"
+    }
+`,
   node: `exports.handler = async (event) => {
   const payload = event?.payload ?? {};
   return { status: "ok", lang: "node", echo: payload };
@@ -34,6 +53,65 @@ import "context"
 
 func Handler(ctx context.Context, event map[string]any) (map[string]any, error) {
     return map[string]any{"status": "ok", "lang": "go", "echo": event}, nil
+}
+`,
+  java11: `import java.util.HashMap;
+import java.util.Map;
+
+public class Handler {
+    public Map<String, Object> handle(Map<String, Object> event) {
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", "ok");
+        res.put("lang", "java11");
+        res.put("echo", event);
+        return res;
+    }
+}
+`,
+  java17: `import java.util.HashMap;
+import java.util.Map;
+
+public class Handler {
+    public Map<String, Object> handle(Map<String, Object> event) {
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", "ok");
+        res.put("lang", "java17");
+        res.put("echo", event);
+        return res;
+    }
+}
+`,
+  java21: `import java.util.HashMap;
+import java.util.Map;
+
+public class Handler {
+    public Map<String, Object> handle(Map<String, Object> event) {
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", "ok");
+        res.put("lang", "java21");
+        res.put("echo", event);
+        return res;
+    }
+}
+`,
+  swift: `import Foundation
+
+struct Handler {
+    func handle(event: [String: Any]) -> [String: Any] {
+        return [
+            "status": "ok",
+            "lang": "swift",
+            "echo": event
+        ]
+    }
+}
+`,
+  kotlin: `fun handler(event: Map<String, Any?>): Map<String, Any?> {
+    return mapOf(
+        "status" to "ok",
+        "lang" to "kotlin",
+        "echo" to event
+    )
 }
 `,
 };

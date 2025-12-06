@@ -39,6 +39,11 @@ const languageMeta: Record<
     short: "Py",
     badgeClass: "bg-amber-100 text-amber-800 border-amber-200",
   },
+  pypy3: {
+    label: "PyPy3",
+    short: "PyPy",
+    badgeClass: "bg-orange-100 text-orange-800 border-orange-200",
+  },
   node: {
     label: "Node.js",
     short: "Js",
@@ -48,6 +53,31 @@ const languageMeta: Record<
     label: "Go",
     short: "Go",
     badgeClass: "bg-sky-100 text-sky-800 border-sky-200",
+  },
+  java11: {
+    label: "Java 11",
+    short: "J11",
+    badgeClass: "bg-yellow-100 text-yellow-900 border-yellow-200",
+  },
+  java17: {
+    label: "Java 17",
+    short: "J17",
+    badgeClass: "bg-amber-100 text-amber-900 border-amber-200",
+  },
+  java21: {
+    label: "Java 21",
+    short: "J21",
+    badgeClass: "bg-lime-100 text-lime-900 border-lime-200",
+  },
+  swift: {
+    label: "Swift",
+    short: "Sw",
+    badgeClass: "bg-red-100 text-red-900 border-red-200",
+  },
+  kotlin: {
+    label: "Kotlin (JVM)",
+    short: "Kt",
+    badgeClass: "bg-purple-100 text-purple-900 border-purple-200",
   },
 };
 
@@ -92,8 +122,26 @@ const formatDuration = (ms?: number | null) => {
 
 const runtimeForLanguage: Record<Language, string> = {
   python: "python",
+  pypy3: "pypy3",
   node: "node",
   go: "go",
+  java11: "java11",
+  java17: "java17",
+  java21: "java21",
+  swift: "swift",
+  kotlin: "kotlin",
+};
+
+const editorLanguageFor: Record<Language, string> = {
+  python: "python",
+  pypy3: "python",
+  node: "javascript",
+  go: "go",
+  java11: "java",
+  java17: "java",
+  java21: "java",
+  swift: "swift",
+  kotlin: "kotlin",
 };
 
 const MAX_POLL_ATTEMPTS = 60; // ~60s with 1s interval
@@ -200,8 +248,16 @@ export default function Home() {
 
   const mapRuntimeToLanguage = useCallback((runtime: string | undefined): Language => {
     const normalized = runtime?.toLowerCase() ?? "";
-    if (normalized.includes("py")) return "python";
+    if (normalized.includes("pypy")) return "pypy3";
+    if (normalized.includes("python") || normalized === "py") return "python";
+    if (normalized.includes("java21")) return "java21";
+    if (normalized.includes("java17")) return "java17";
+    if (normalized.includes("java11")) return "java11";
+    if (normalized.includes("java")) return "java17";
+    if (normalized.includes("swift")) return "swift";
+    if (normalized.includes("kotlin")) return "kotlin";
     if (normalized.includes("go")) return "go";
+    if (normalized.includes("node") || normalized.includes("js")) return "node";
     return "node";
   }, []);
 
@@ -875,7 +931,7 @@ useEffect(() => {
             <CardContent className="flex-1 space-y-3">
               <MonacoEditor
                 height="460px"
-                language={selectedLanguage === "node" ? "javascript" : selectedLanguage}
+                language={editorLanguageFor[selectedLanguage] ?? "plaintext"}
                 value={selectedFunction?.code ?? defaultCodeByLanguage.python}
                 onChange={(value) => setCode(value ?? "")}
                 theme="vs-dark"
