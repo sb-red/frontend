@@ -132,6 +132,17 @@ type CreateFunctionRequest = {
   params?: Array<Record<string, unknown>>;
 };
 
+export type ScheduleItem = {
+  id: number;
+  scheduled_at: string;
+  payload?: Record<string, unknown>;
+};
+
+type CreateScheduleRequest = {
+  scheduled_at: string;
+  payload?: Record<string, unknown>;
+};
+
 export async function listFunctions() {
   return apiRequest<FunctionListItem[]>("/functions");
 }
@@ -170,4 +181,22 @@ export async function deleteFunction(id: number) {
   return apiRequest<{ message?: string }>(`/functions/${id}`, {
     method: "DELETE",
   });
+}
+
+export async function listSchedules(functionId: number) {
+  return apiRequest<ScheduleItem[]>(`/functions/${functionId}/schedules`);
+}
+
+export async function createSchedule(functionId: number, body: CreateScheduleRequest) {
+  return apiRequest<ScheduleItem>(`/functions/${functionId}/schedules`, {
+    method: "POST",
+    body,
+  });
+}
+
+export async function deleteSchedule(functionId: number, scheduleId: number) {
+  return apiRequest<{ message?: string }>(
+    `/functions/${functionId}/schedules/${scheduleId}`,
+    { method: "DELETE" },
+  );
 }

@@ -22,6 +22,9 @@ import {
   getInvocationStatus,
   invokeFunction,
   listInvocations,
+  listSchedules,
+  createSchedule,
+  deleteSchedule,
   type InvocationListItem,
 } from "@/lib/api";
 
@@ -120,6 +123,24 @@ const formatDuration = (ms?: number | null) => {
   return `${(ms / 1000).toFixed(2)} s`;
 };
 
+const formatScheduleTime = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+};
+
+type ScheduleItem = {
+  id: number;
+  scheduled_at: string;
+  payload?: Record<string, unknown>;
+};
+
 const MAX_POLL_ATTEMPTS = 60; // ~60s with 1s interval
 const MAX_STUCK_ATTEMPTS = 30; // ~30s without status change
 
@@ -186,6 +207,18 @@ export default function HomePage({
   const lastStatusRef = useRef<RunStatus | null>(null);
   const stuckCountRef = useRef(0);
   const remoteEnabled = !disableRemoteFetch;
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
+  const [schedulesLoading, setSchedulesLoading] = useState(false);
+  const [schedulesError, setSchedulesError] = useState<string | null>(null);
+  const scheduleTimersRef = useRef<Map<number, number>>(new Map());
+
+  const showToast = useCallback(
+    (type: "success" | "error", message: string) => {
+      setToast({ type, message });
+    },
+    [],
+  );
 
   const setFunctions = useCallback(
     (next: SoftGateFunction[]) => {
@@ -203,6 +236,14 @@ export default function HomePage({
   useEffect(() => {
     setFunctions(initialFunctions);
   }, [initialFunctions, setFunctions]);
+
+  useEffect(() => {
+    const dt = new Date(Date.now() + 10 * 60 * 1000);
+    const localIso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+    setScheduleTime(localIso);
+  }, [selectedFunction?.id]);
 
   const setCode = useCallback(
     (code: string) => {
@@ -289,11 +330,156 @@ export default function HomePage({
     }
   };
 
+  const clearScheduleTimers = useCallback(() => {
+    scheduleTimersRef.current.forEach((id) => window.clearTimeout(id));
+    scheduleTimersRef.current.clear();
+  }, []);
+
+  const logScheduleStart = useCallback(
+    (item: ScheduleItem) => {
+      setActiveTab("output");
+      setRunLogs((prev) => [
+        ...prev,
+        `[Schedule] ${new Date(item.scheduled_at).toISOString()} 실행 시작 (id=${item.id})`,
+      ]);
+      setRunMessage("예약 실행이 시작되었습니다.");
+    },
+    [],
+  );
+
+  const registerScheduleTimer = useCallback(
+    (item: ScheduleItem) => {
+      const time = new Date(item.scheduled_at).getTime();
+      if (Number.isNaN(time)) return;
+      const now = Date.now();
+      const wait = time - now;
+      const trigger = () => {
+        logScheduleStart(item);
+        scheduleTimersRef.current.delete(item.id);
+      };
+      if (wait <= 0) return;
+      const timerId = window.setTimeout(trigger, wait);
+      scheduleTimersRef.current.set(item.id, timerId);
+    },
+    [logScheduleStart],
+  );
+
+  const handleScheduleAdd = useCallback(() => {
+    if (!remoteEnabled) {
+      showToast("error", "백엔드 API 연결이 활성화되지 않았습니다.");
+      return;
+    }
+    const targetFn =
+      functions.find((fn) => fn.id === selectedId) ?? functions[0];
+    if (!targetFn || targetFn.id < 0) {
+      showToast("error", "스케줄을 연결할 함수를 먼저 선택/저장하세요.");
+      return;
+    }
+    if (!scheduleTime) {
+      showToast("error", "예약할 날짜와 시간을 선택하세요.");
+      return;
+    }
+    const parsedDate = new Date(scheduleTime);
+    if (Number.isNaN(parsedDate.getTime())) {
+      showToast("error", "유효한 날짜/시간이 아닙니다.");
+      return;
+    }
+    if (parsedDate.getTime() <= Date.now()) {
+      showToast("error", "미래 시간으로만 예약할 수 있습니다.");
+      return;
+    }
+    const iso = parsedDate.toISOString();
+    createSchedule(targetFn.id, {
+      scheduled_at: iso,
+    })
+      .then((res) => {
+        setSchedules((prev) => [...prev, res]);
+        registerScheduleTimer(res);
+        showToast("success", "스케줄이 추가되었습니다.");
+      })
+      .catch((error) => {
+        showToast(
+          "error",
+          error instanceof Error ? error.message : "스케줄 생성에 실패했습니다.",
+        );
+      });
+  }, [
+    functions,
+    registerScheduleTimer,
+    remoteEnabled,
+    scheduleTime,
+    selectedId,
+    showToast,
+  ]);
+
+  const handleScheduleDelete = useCallback((id: number) => {
+    const targetFn =
+      functions.find((fn) => fn.id === selectedId) ?? functions[0];
+    if (!remoteEnabled) {
+      showToast("error", "백엔드 API 연결이 활성화되지 않았습니다.");
+      return;
+    }
+    if (!targetFn) return;
+    deleteSchedule(targetFn.id, id)
+      .then(() => {
+        setSchedules((prev) => prev.filter((item) => item.id !== id));
+        clearScheduleTimers();
+        showToast("success", "스케줄이 삭제되었습니다.");
+      })
+      .catch((error) => {
+        showToast(
+          "error",
+          error instanceof Error ? error.message : "삭제에 실패했습니다.",
+        );
+      });
+  }, [clearScheduleTimers, functions, remoteEnabled, selectedId, showToast]);
+
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(null), 2600);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    clearScheduleTimers();
+    if (!remoteEnabled || !selectedFunction || selectedFunction.id < 0) {
+      setSchedules([]);
+      setSchedulesError(null);
+      setSchedulesLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setSchedulesLoading(true);
+    setSchedulesError(null);
+    listSchedules(selectedFunction.id)
+      .then((rows) => {
+        if (cancelled) return;
+        setSchedules(rows);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setSchedulesError(
+          error instanceof Error ? error.message : "스케줄 불러오기에 실패했습니다.",
+        );
+        setSchedules([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSchedulesLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      clearScheduleTimers();
+    };
+  }, [clearScheduleTimers, remoteEnabled, selectedFunction]);
+
+  useEffect(() => {
+    clearScheduleTimers();
+    schedules.forEach(registerScheduleTimer);
+    return () => {
+      clearScheduleTimers();
+    };
+  }, [clearScheduleTimers, registerScheduleTimer, schedules]);
 
   const handleSelectFunction = (fn: SoftGateFunction) => {
     setSelectedId(fn.id);
@@ -312,10 +498,6 @@ export default function HomePage({
     } catch {
       setJsonError("유효한 JSON 형식이 아닙니다.");
     }
-  };
-
-  const showToast = (type: "success" | "error", message: string) => {
-    setToast({ type, message });
   };
 
   const handleCreateFunction = () => {
@@ -685,7 +867,7 @@ export default function HomePage({
     return () => {
       cancelled = true;
     };
-  }, [mapRuntimeToLanguage, mergeFunction, remoteEnabled, selectedFunction, setCode]);
+  }, [mergeFunction, remoteEnabled, selectedFunction, setCode]);
 
   useEffect(() => {
     if (
@@ -1179,6 +1361,138 @@ export default function HomePage({
             </CardContent>
           </Card>
         </div>
+
+        <Card className="relative rounded-2xl border border-slate-200/80 bg-white/85 shadow-xl shadow-slate-200/70 backdrop-blur text-[15px]">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 border-b pb-4">
+            <div className="space-y-1">
+              <CardTitle className="text-lg">Scheduler</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                실행 시점을 지정해 예약 실행을 만듭니다. 예약이 시작되면 Output 로그에 시작 메시지가 표시됩니다.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[12px] font-semibold text-muted-foreground">
+                {schedules.length} scheduled
+              </span>
+              {!remoteEnabled && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[12px] font-semibold text-red-700">
+                  API disabled
+                </span>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    대상 함수
+                  </label>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {selectedFunction?.name ?? "선택된 함수 없음"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    예약은 현재 선택된 함수에 대해 생성됩니다.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      실행 일시
+                    </label>
+                    <Input
+                      type="datetime-local"
+                      value={scheduleTime}
+                      onChange={(e) => setScheduleTime(e.target.value)}
+                      className="h-10"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      현재 시각 이후로만 설정할 수 있습니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button className="flex-1" onClick={handleScheduleAdd}>
+                    예약 생성
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      const dt = new Date(Date.now() + 10 * 60 * 1000);
+                      const localIso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
+                        .toISOString()
+                        .slice(0, 16);
+                      setScheduleTime(localIso);
+                    }}
+                  >
+                    다시 입력
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold">예약 목록</p>
+                    <p className="text-xs text-muted-foreground">
+                      삭제 시 백엔드에 바로 반영됩니다.
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">
+                    {schedulesLoading
+                      ? "불러오는 중..."
+                      : schedulesError
+                        ? "오류 발생"
+                        : `${schedules.length}개`}
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-80 overflow-auto">
+                  {schedulesError ? (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-[11px] text-destructive">
+                      {schedulesError}
+                    </div>
+                  ) : schedules.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-muted-foreground">
+                      예약된 실행이 없습니다. 왼쪽에서 일시와 payload를 지정해 추가하세요.
+                    </div>
+                  ) : (
+                    schedules
+                      .slice()
+                      .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+                      .map((item) => {
+                        return (
+                          <div
+                            key={item.id}
+                      className="grid grid-cols-[1fr_auto] gap-3 rounded-lg border border-slate-200 bg-white/80 px-3 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.05)]"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-base font-semibold text-slate-900">
+                          실행 예정: {formatScheduleTime(item.scheduled_at)}
+                        </p>
+                        <p className="text-[12px] text-muted-foreground">
+                          예약 ID: {item.id}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleScheduleDelete(item.id)}
+                              >
+                                삭제
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
