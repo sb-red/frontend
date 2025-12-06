@@ -1,22 +1,61 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://43.202.6.15/api";
+const DEFAULT_API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "/api/softgate";
+
+const API_BASE_URL = resolveApiBaseUrl(DEFAULT_API_BASE);
+
+function resolveApiBaseUrl(base: string) {
+  const cleaned = stripTrailingSlash(base || "/api/softgate");
+  const isServer = typeof window === "undefined";
+  const isAbsolute =
+    cleaned.startsWith("http://") || cleaned.startsWith("https://");
+  if (isAbsolute) return cleaned;
+
+  const relativeBase = normalizeRelativeBase(cleaned);
+  if (!isServer) return relativeBase;
+
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const normalizedOrigin = origin.endsWith("/")
+    ? origin.slice(0, -1)
+    : origin;
+  return `${normalizedOrigin}${relativeBase}`;
+}
+
+function normalizeRelativeBase(base: string) {
+  const withLeading = base.startsWith("/") ? base : `/${base}`;
+  if (withLeading === "/api" || withLeading === "/api/") {
+    return "/api/softgate";
+  }
+  if (withLeading === "/" || withLeading === "") {
+    return "/api/softgate";
+  }
+  return withLeading;
+}
+
+function stripTrailingSlash(value: string) {
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+}
 
 type FetchOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
   timeoutMs?: number;
+  cache?: RequestCache;
 };
 
 type ErrorLike = { message?: string } & Record<string, unknown>;
 
 async function apiRequest<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { method = "GET", body, timeoutMs = 10000 } = options;
+  const { method = "GET", body, timeoutMs = 10000, cache = "no-store" } = options;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(`${API_BASE_URL}${path}`, {
       method,
+      cache,
       headers: {
         "Content-Type": "application/json",
       },
