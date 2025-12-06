@@ -33,11 +33,13 @@ function forwardHeaders(headers: Headers) {
   return forwarded;
 }
 
-async function handler(
-  request: NextRequest,
-  { params }: { params: { path?: string[] } },
-) {
-  const path = params.path ?? [];
+type RouteContext =
+  | { params: { path?: string[] } }
+  | { params: Promise<{ path?: string[] }> };
+
+async function handler(request: NextRequest, context: RouteContext) {
+  const resolvedParams = await Promise.resolve(context.params);
+  const path = Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
   const targetUrl = buildTargetUrl(path, request.nextUrl.searchParams);
   const hasBody = !["GET", "HEAD"].includes(request.method);
   const body = hasBody ? await request.text() : undefined;
