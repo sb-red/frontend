@@ -1070,7 +1070,6 @@ export default function HomePage({
 
 return (
   <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
-    {/* 배경 조명 효과 수정: Rose 톤으로 변경하여 따뜻하고 고급스러운 킥 포인트 추가 */}
     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(14,165,233,0.08),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_30%)]" />
     <div className="pointer-events-none absolute -right-16 top-10 h-64 w-64 rounded-full bg-rose-500/30 blur-[100px] mix-blend-multiply" />
     <div className="pointer-events-none absolute -left-10 bottom-12 h-56 w-56 rounded-full bg-emerald-300/20 blur-3xl mix-blend-screen" />
