@@ -153,7 +153,9 @@ const MAX_POLL_ATTEMPTS = 60; // ~60s with 1s interval
 const MAX_STUCK_ATTEMPTS = 30; // ~30s without status change
 
 const samplePayload = `{
-  "score": "85"
+  "payload": {
+    "user": "Softbank, Progate, Korec"
+  }
 }`;
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
