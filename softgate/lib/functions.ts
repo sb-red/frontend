@@ -195,5 +195,6 @@ export function mapRuntimeToLanguage(runtime: string | undefined): Language {
   if (normalized.includes("kotlin")) return "kotlin";
   if (normalized.includes("go")) return "go";
   if (normalized.includes("node") || normalized.includes("js")) return "node";
+  if (normalized.includes("cpp") || normalized.includes("cpp")) return "cpp";
   return "node";
 }
