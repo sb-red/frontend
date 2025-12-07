@@ -57,6 +57,11 @@ const languageMeta: Record<
     short: "Go",
     badgeClass: "bg-sky-100 text-sky-800 border-sky-200",
   },
+  cpp: {
+    label: "Cpp",
+    short: "Cpp",
+    badgeClass: "bg-navy-100 text-sky-800 border-sky-200",
+  },
   java11: {
     label: "Java 11",
     short: "J11",

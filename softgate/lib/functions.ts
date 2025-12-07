@@ -3,6 +3,7 @@ export type Language =
   | "pypy3"
   | "node"
   | "go"
+  | "cpp"
   | "java11"
   | "java17"
   | "java21"
@@ -82,6 +83,21 @@ export const defaultCodeByLanguage: Record<Language, string> = {
     }
 }
   `,
+  cpp: `#include <string>
+
+json handler(const json& event) {
+    int score = event["score"].get<int>();
+    std::string grade;
+
+    if (score >= 90) grade = "A";
+    else if (score >= 80) grade = "B";
+    else if (score >= 70) grade = "C";
+    else if (score >= 60) grade = "D";
+    else grade = "F";
+
+    return {{"score", score}, {"grade", grade}};
+}
+  `,
   java11: `import java.util.Map;
 import java.util.HashMap;
 
@@ -146,6 +162,7 @@ export const runtimeForLanguage: Record<Language, string> = {
   pypy3: "pypy3",
   node: "node",
   go: "go",
+  cpp: "cpp",
   java11: "java11",
   java17: "java17",
   java21: "java21",
@@ -158,6 +175,7 @@ export const editorLanguageFor: Record<Language, string> = {
   pypy3: "python",
   node: "javascript",
   go: "go",
+  cpp: "cpp",
   java11: "java",
   java17: "java",
   java21: "java",
