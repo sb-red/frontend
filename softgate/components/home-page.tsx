@@ -1095,7 +1095,7 @@ return (
             <div className="h-10 w-1.5 rounded-full bg-gradient-to-b from-red-600 via-rose-500 to-red-800 shadow-[0_0_15px_rgba(225,29,72,0.5)]" />
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
-                Trusted Infra
+                Team RED
               </p>
               <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
                 SoftGate Console
