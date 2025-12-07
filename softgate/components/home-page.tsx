@@ -1068,187 +1068,92 @@ export default function HomePage({
     };
   }, [activeTab, remoteEnabled, selectedFunction]);
 
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(14,165,233,0.08),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_30%)]" />
-      <div className="pointer-events-none absolute -right-16 top-10 h-48 w-48 rounded-full bg-red-400/25 blur-3xl mix-blend-screen" />
-      <div className="pointer-events-none absolute -left-10 bottom-12 h-56 w-56 rounded-full bg-emerald-300/20 blur-3xl mix-blend-screen" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_10%,rgba(255,255,255,0.25),transparent_30%),radial-gradient(circle_at_70%_90%,rgba(255,255,255,0.2),transparent_35%)]" />
-      {toast && (
-        <div
-          className={cn(
-            "fixed right-4 top-4 z-50 rounded-lg border px-4 py-2 text-sm shadow-lg backdrop-blur",
-            toast.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-              : "border-red-200 bg-red-50 text-red-900",
-          )}
-        >
-          {toast.message}
-        </div>
-      )}
-      <div className="relative mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col gap-6 px-4 py-8 lg:px-10">
-        <header className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-1.5 rounded-full bg-gradient-to-b from-slate-900 via-slate-700 to-slate-400" />
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
-                  Trusted Infra
-                </p>
-                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-                  SoftGate Console
-                </h1>
-              </div>
-            </div>
-            <div className="hidden items-center gap-2 rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 text-xs font-medium text-slate-500 shadow-sm backdrop-blur md:flex">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.25)]" />
-              Live Workspace
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-600">
-                <span aria-hidden>🎄</span> Holiday
-              </span>
+return (
+  <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    {/* 배경 조명 효과 수정: Rose 톤으로 변경하여 따뜻하고 고급스러운 킥 포인트 추가 */}
+    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(14,165,233,0.08),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_30%)]" />
+    <div className="pointer-events-none absolute -right-16 top-10 h-64 w-64 rounded-full bg-rose-500/30 blur-[100px] mix-blend-multiply" />
+    <div className="pointer-events-none absolute -left-10 bottom-12 h-56 w-56 rounded-full bg-emerald-300/20 blur-3xl mix-blend-screen" />
+    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_10%,rgba(255,255,255,0.25),transparent_30%),radial-gradient(circle_at_70%_90%,rgba(255,255,255,0.2),transparent_35%)]" />
+    
+    {toast && (
+      <div
+        className={cn(
+          "fixed right-4 top-4 z-50 rounded-lg border px-4 py-2 text-sm shadow-lg backdrop-blur",
+          toast.type === "success"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+            : "border-red-200 bg-red-50 text-red-900",
+        )}
+      >
+        {toast.message}
+      </div>
+    )}
+    <div className="relative mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col gap-6 px-4 py-8 lg:px-10">
+      <header className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* 헤더 바 수정: 강렬한 Red 그라데이션 포인트 */}
+            <div className="h-10 w-1.5 rounded-full bg-gradient-to-b from-red-600 via-rose-500 to-red-800 shadow-[0_0_15px_rgba(225,29,72,0.5)]" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                Trusted Infra
+              </p>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                SoftGate Console
+              </h1>
             </div>
           </div>
-          <p className="text-sm text-slate-600">Serverless Function Workspace</p>
-        </header>
+          <div className="hidden items-center gap-2 rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 text-xs font-medium text-slate-500 shadow-sm backdrop-blur md:flex">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.25)]" />
+            Live Workspace
+            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-600">
+              <span aria-hidden>🎄</span> Christmas
+            </span>
+          </div>
+        </div>
+        <p className="text-sm text-slate-600">Serverless Function Workspace</p>
+      </header>
 
-        <div className="grid flex-1 gap-4 auto-rows-[minmax(0,1fr)] lg:grid-cols-[2fr_5fr_3fr]">
-          <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
-              <CardTitle className="text-base">함수 목록</CardTitle>
-              <Button
-                size="sm"
-                onClick={() => setShowCreateForm((prev) => !prev)}
-                variant={showCreateForm ? "secondary" : "default"}
-              >
-                {showCreateForm ? "닫기" : "+ 함수 생성"}
-              </Button>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-4">
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Search functions"
-                  className="h-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                {search && (
-                  <Button variant="ghost" size="sm" onClick={() => setSearch("")}>
-                    Clear
-                  </Button>
-                )}
-              </div>
-              {showCreateForm && (
-                <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
-                  <Input
-                    placeholder="함수 이름"
-                    value={createName}
-                    onChange={(e) => setCreateName(e.target.value)}
-                    className="h-9"
-                  />
-                  <select
-                    value={createLanguage}
-                    onChange={(e) =>
-                      setCreateLanguage(e.target.value as Language)
-                    }
-                    className="h-9 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
-                  >
-                    {languageOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <Input
-                    placeholder="설명 (선택)"
-                    value={createDescription}
-                    onChange={(e) => setCreateDescription(e.target.value)}
-                    className="h-9"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={handleCreateFunction}
-                    >
-                      생성
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setShowCreateForm(false);
-                        setCreateName("");
-                        setCreateDescription("");
-                        setCreateLanguage("python");
-                      }}
-                    >
-                      취소
-                    </Button>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    생성 시 기본 템플릿 코드가 에디터에 표시됩니다.
-                  </p>
-                </div>
+      <div className="grid flex-1 gap-4 auto-rows-[minmax(0,1fr)] lg:grid-cols-[2fr_5fr_3fr]">
+        <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
+            <CardTitle className="text-base">함수 목록</CardTitle>
+            <Button
+              size="sm"
+              onClick={() => setShowCreateForm((prev) => !prev)}
+              variant={showCreateForm ? "secondary" : "default"}
+            >
+              {showCreateForm ? "닫기" : "+ 함수 생성"}
+            </Button>
+          </CardHeader>
+          <CardContent className="flex-1 space-y-4">
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search functions"
+                className="h-10"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <Button variant="ghost" size="sm" onClick={() => setSearch("")}>
+                  Clear
+                </Button>
               )}
-              <div className="space-y-2">
-                {filteredFunctions.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
-                    검색 결과가 없습니다.
-                  </div>
-                )}
-                {filteredFunctions.map((fn) => {
-                  const meta = languageMeta[fn.language];
-                  const isActive = selectedId === fn.id;
-                  return (
-                    <button
-                      key={fn.id}
-                      type="button"
-                      onClick={() => handleSelectFunction(fn)}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-xl border border-slate-200/60 bg-white/70 px-3 py-2 text-left text-sm transition shadow-sm",
-                        "hover:border-primary/50 hover:bg-slate-50",
-                        isActive &&
-                          "border-primary/60 bg-slate-100 ring-2 ring-primary/30 shadow-md",
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={cn(
-                            "flex size-9 items-center justify-center rounded-full border text-xs font-semibold shadow-sm bg-white",
-                            meta.badgeClass,
-                          )}
-                        >
-                          {meta.short}
-                        </span>
-                        <div>
-                          <span className="block font-medium">{fn.name}</span>
-                          <span className="block text-xs text-muted-foreground">
-                            {meta.label}
-                          </span>
-                        </div>
-                      </div>
-                      {isActive && (
-                        <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                          Active
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
-              <CardTitle className="text-base">코드 에디터</CardTitle>
-              <div className="flex items-center gap-2">
+            </div>
+            {showCreateForm && (
+              <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
+                <Input
+                  placeholder="함수 이름"
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  className="h-9"
+                />
                 <select
-                  value={selectedLanguage}
-                  onChange={(event) =>
-                    handleLanguageChange(event.target.value as Language)
+                  value={createLanguage}
+                  onChange={(e) =>
+                    setCreateLanguage(e.target.value as Language)
                   }
-                  className="h-9 rounded-md border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+                  className="h-9 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                 >
                   {languageOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -1256,435 +1161,547 @@ export default function HomePage({
                     </option>
                   ))}
                 </select>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleSave}
-                  disabled={isSaving || !selectedFunction}
-                >
-                  {isSaving ? "저장 중..." : "저장"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={handleDelete}
-                  disabled={isDeleting || !selectedFunction}
-                >
-                  {isDeleting ? "삭제 중..." : "삭제"}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-3">
-              <MonacoEditor
-                height="460px"
-                language={editorLanguageFor[selectedLanguage] ?? "plaintext"}
-                value={selectedFunction?.code ?? defaultCodeByLanguage.python}
-                onChange={(value) => setCode(value ?? "")}
-                theme="vs-dark"
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 13,
-                  scrollBeyondLastLine: false,
-                  renderWhitespace: "selection",
-                  automaticLayout: true,
-                }}
-                className="overflow-hidden rounded-xl border border-slate-900/40 shadow-inner"
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
-              <CardTitle className="text-base">실행 입력/상태</CardTitle>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setPayload(samplePayload);
-                  setJsonError(null);
-                  setRunMessage(null);
-                  setRunStatus("idle");
-                  setRunLogs([]);
-                  setRunResult("");
-                  setRunDurationMs(null);
-                  setIsRunning(false);
-                  clearPoll();
-                }}
-              >
-                Reset
-              </Button>
-            </CardHeader>
-            <CardContent className="flex h-full flex-col space-y-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Payload 미리보기</p>
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-900 shadow-inner">
-                  <MonacoEditor
-                    height="220px"
-                    language="json"
-                    value={payload}
-                    onChange={handlePayloadChange}
-                    theme="vs-dark"
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 12,
-                      scrollBeyondLastLine: false,
-                      renderWhitespace: "selection",
-                      automaticLayout: true,
+                <Input
+                  placeholder="설명 (선택)"
+                  value={createDescription}
+                  onChange={(e) => setCreateDescription(e.target.value)}
+                  className="h-9"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleCreateFunction}
+                  >
+                    생성
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setCreateName("");
+                      setCreateDescription("");
+                      setCreateLanguage("python");
                     }}
-                    className="monaco-input"
-                  />
-                </div>
-                {jsonError ? (
-                  <p className="text-xs font-medium text-destructive">
-                    {jsonError}
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">
-                    JSON valid. 실행 시 payload로 전송됩니다.
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Button
-                  className="w-full"
-                  onClick={handleRun}
-                  disabled={
-                    Boolean(jsonError) || isRunning || !selectedFunction || selectedFunction.id < 0
-                  }
-                >
-                  {isRunning ? "실행 중..." : selectedFunction ? "실행" : "함수 선택"}
-                </Button>
-                {runMessage && (
-                  <p className="text-xs text-muted-foreground">{runMessage}</p>
-                )}
-              </div>
-              <div className="flex flex-1 flex-col space-y-3 border-t pt-4 min-h-0">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-1 rounded-md bg-muted/60 p-1 text-sm">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("output")}
-                      className={cn(
-                        "rounded-md px-3 py-1.5 font-medium transition",
-                        activeTab === "output"
-                          ? "bg-background shadow-sm"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      Output
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("history")}
-                      className={cn(
-                        "rounded-md px-3 py-1.5 font-medium transition",
-                        activeTab === "history"
-                          ? "bg-background shadow-sm"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      History
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
-                        statusMeta[runStatus].className,
-                        statusMeta[runStatus].textClass,
-                      )}
-                    >
-                      {statusMeta[runStatus].label}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-                      Duration
-                      <span className="text-foreground">{formatDuration(runDurationMs)}</span>
-                    </span>
-                  </div>
-                </div>
-
-                {activeTab === "output" ? (
-                  <div
-                    className="flex flex-1 min-h-0 w-full flex-col gap-3"
-                    style={{ scrollbarGutter: "stable both-edges" }}
                   >
-                    {runStatus === "fail" && (
-                      <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                        오류가 발생했습니다. 로그를 확인하세요.
-                      </div>
-                    )}
-                    {!selectedFunction && (
-                      <div className="rounded-md border border-border bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
-                        함수를 선택하면 실행 결과가 표시됩니다.
-                      </div>
-                    )}
-                    <div className="grid h-full min-h-0 w-full grid-rows-[1fr_1fr] gap-3">
-                      <div className="flex min-h-0 min-w-0 flex-col rounded-lg border bg-card/60 p-3">
-                        <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                          Logs
-                        </p>
-                        <div className="mt-1 flex-1 overflow-auto rounded-md border border-border/60 bg-card/80 p-2 font-mono text-xs leading-relaxed text-foreground/80">
-                          {runLogs.length === 0 ? (
-                            <p className="text-muted-foreground">No logs yet.</p>
-                          ) : (
-                            runLogs.map((line, idx) => (
-                              <p
-                                key={idx}
-                                className="whitespace-pre-wrap break-all"
-                              >
-                                {line}
-                              </p>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex min-h-0 min-w-0 flex-col rounded-lg border bg-card/60 p-3">
-                        <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                          Result
-                        </p>
-                        <pre className="mt-1 flex-1 overflow-auto rounded-md border border-border/60 bg-card/80 p-3 text-xs leading-relaxed text-foreground/80">
-                          {runResult || "결과가 아직 없습니다. 실행 후 결과가 표시됩니다."}
-                        </pre>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    className="flex flex-1 min-h-0 w-full flex-col overflow-hidden rounded-lg border bg-card/60 overflow-y-scroll"
-                    style={{ scrollbarGutter: "stable both-edges" }}
-                  >
-                    {!selectedFunction || selectedFunction.id < 0 ? (
-                      <div className="p-3 text-xs text-muted-foreground">
-                        함수를 저장한 뒤 이력이 표시됩니다.
-                      </div>
-                    ) : historyLoading ? (
-                      <div className="p-3 text-xs text-muted-foreground">
-                        이력 불러오는 중...
-                      </div>
-                    ) : historyError ? (
-                      <div className="p-3 text-xs text-destructive">
-                        {historyError}
-                      </div>
-                    ) : historyRows.length === 0 ? (
-                      <div className="p-3 text-xs text-muted-foreground">
-                        이력이 없습니다. 실행 후 기록이 표시됩니다.
-                      </div>
-                    ) : (
-                      <div className="h-full overflow-auto overflow-x-auto">
-                        <table className="min-w-full table-fixed text-left text-xs">
-                          <thead className="bg-muted/80 text-foreground sticky top-0">
-                            <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                              <th className="px-3 py-2 font-semibold">Function</th>
-                              <th className="px-3 py-2 font-semibold">Status</th>
-                              <th className="px-3 py-2 font-semibold">Duration</th>
-                              <th className="px-3 py-2 font-semibold">Started</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border/80">
-                            {historyRows.map((row) => {
-                              const badgeClass =
-                                (row.status ?? "").toLowerCase() === "success"
-                                  ? "bg-emerald-100 text-emerald-900"
-                                  : "bg-red-100 text-red-900";
-                              const fnName =
-                                functionNameMap.get(row.function_id ?? -1) ??
-                                selectedFunction?.name ??
-                                "-";
-                              const started =
-                                row.invoked_at && row.invoked_at.length >= 19
-                                  ? row.invoked_at.slice(0, 19)
-                                  : row.invoked_at ?? "-";
-                              return (
-                                <tr key={row.id} className="hover:bg-accent/40">
-                                  <td className="px-3 py-2">{fnName}</td>
-                                  <td className="px-3 py-2">
-                                    <span
-                                      className={cn(
-                                        "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                                        badgeClass,
-                                      )}
-                                    >
-                                      {row.status ?? "-"}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2 text-muted-foreground">
-                                    {formatDuration(row.duration_ms)}
-                                  </td>
-                                  <td className="px-3 py-2 text-muted-foreground">
-                                    {started}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="relative rounded-2xl border border-slate-200/80 bg-white/85 shadow-xl shadow-slate-200/70 backdrop-blur text-[15px]">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 border-b pb-4">
-            <div className="space-y-1">
-              <CardTitle className="text-lg">Scheduler</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                실행 시점을 지정해 예약 실행을 만듭니다. 예약이 시작되면 Output 로그에 시작 메시지가 표시됩니다.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[12px] font-semibold text-muted-foreground">
-                {schedules.length} scheduled
-              </span>
-              {!remoteEnabled && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[12px] font-semibold text-red-700">
-                  API disabled
-                </span>
-              )}
-            </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    대상 함수
-                  </label>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {selectedFunction?.name ?? "선택된 함수 없음"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    예약은 현재 선택된 함수에 대해 생성됩니다.
-                  </p>
-                </div>
-
-                <div className="space-y-3 w-full">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      실행 일시
-                    </label>
-                    <Input
-                      type="datetime-local"
-                      value={scheduleTime}
-                      onChange={(e) => setScheduleTime(e.target.value)}
-                      className="h-10 w-full"
-                    />
-                    <p className="text-[11px] text-muted-foreground">
-                      현재 시각 이후로만 설정할 수 있습니다.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Payload (선택)
-                    </label>
-                    <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-inner">
-                      <MonacoEditor
-                        height="180px"
-                        language="json"
-                        value={schedulePayload}
-                        onChange={(value) => setSchedulePayload(value ?? "")}
-                        theme="vs-dark"
-                        options={{
-                          minimap: { enabled: false },
-                          fontSize: 12,
-                          scrollBeyondLastLine: false,
-                          renderWhitespace: "selection",
-                          automaticLayout: true,
-                        }}
-                        className="monaco-input"
-                      />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      비워두면 payload는 전송하지 않습니다.
-                    </p>
-                  </div>
-
-                  <Button className="w-full h-10 text-[15px]" onClick={handleScheduleAdd}>
-                    예약 생성
+                    취소
                   </Button>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  생성 시 기본 템플릿 코드가 에디터에 표시됩니다.
+                </p>
               </div>
+            )}
+            <div className="space-y-2">
+              {filteredFunctions.length === 0 && (
+                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
+                  검색 결과가 없습니다.
+                </div>
+              )}
+              {filteredFunctions.map((fn) => {
+                const meta = languageMeta[fn.language];
+                const isActive = selectedId === fn.id;
+                return (
+                  <button
+                    key={fn.id}
+                    type="button"
+                    onClick={() => handleSelectFunction(fn)}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-all duration-300",
+                      // 수정: 비활성 상태일 때 호버 시 살짝 붉은 테두리 힌트
+                      "border-slate-200/60 bg-white/70 hover:bg-slate-50 hover:border-rose-200/50 shadow-sm",
+                      // 수정: 활성 상태일 때 Rose/Red 테마 적용 (글로우 효과 포함)
+                      isActive &&
+                        "border-rose-200 bg-rose-50/80 ring-1 ring-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.15)] z-10",
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={cn(
+                          "flex size-9 items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition-colors",
+                          // 수정: 아이콘 뱃지도 활성 시 붉은 계열로
+                          isActive 
+                            ? "bg-white border-rose-100 text-rose-600" 
+                            : "bg-white " + meta.badgeClass
+                        )}
+                      >
+                        {meta.short}
+                      </span>
+                      <div>
+                        <span className={cn("block font-medium transition-colors", isActive ? "text-slate-900" : "")}>
+                          {fn.name}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {meta.label}
+                        </span>
+                      </div>
+                    </div>
+                    {/* 수정: Active 텍스트를 Pulse Dot 디자인으로 변경 */}
+                    {isActive && (
+                       <div className="flex items-center gap-1.5 rounded-full bg-white/60 px-2 py-1 shadow-sm border border-rose-100">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
+                          Active
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold">예약 목록</p>
-                    <p className="text-xs text-muted-foreground">
-                      삭제 시 백엔드에 바로 반영됩니다.
-                    </p>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground">
-                    {schedulesLoading
-                      ? "불러오는 중..."
-                      : schedulesError
-                        ? "오류 발생"
-                        : `${schedules.length}개`}
+        <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
+            <CardTitle className="text-base">코드 에디터</CardTitle>
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedLanguage}
+                onChange={(event) =>
+                  handleLanguageChange(event.target.value as Language)
+                }
+                className="h-9 rounded-md border bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+              >
+                {languageOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleSave}
+                disabled={isSaving || !selectedFunction}
+              >
+                {isSaving ? "저장 중..." : "저장"}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting || !selectedFunction}
+              >
+                {isDeleting ? "삭제 중..." : "삭제"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 space-y-3">
+            <MonacoEditor
+              height="460px"
+              language={editorLanguageFor[selectedLanguage] ?? "plaintext"}
+              value={selectedFunction?.code ?? defaultCodeByLanguage.python}
+              onChange={(value) => setCode(value ?? "")}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                scrollBeyondLastLine: false,
+                renderWhitespace: "selection",
+                automaticLayout: true,
+              }}
+              className="overflow-hidden rounded-xl border border-slate-900/40 shadow-inner"
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="h-full rounded-2xl border border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/60 backdrop-blur">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 border-b pb-4">
+            <CardTitle className="text-base">실행 입력/상태</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setPayload(samplePayload);
+                setJsonError(null);
+                setRunMessage(null);
+                setRunStatus("idle");
+                setRunLogs([]);
+                setRunResult("");
+                setRunDurationMs(null);
+                setIsRunning(false);
+                clearPoll();
+              }}
+            >
+              Reset
+            </Button>
+          </CardHeader>
+          <CardContent className="flex h-full flex-col space-y-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Payload 미리보기</p>
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-900 shadow-inner">
+                <MonacoEditor
+                  height="220px"
+                  language="json"
+                  value={payload}
+                  onChange={handlePayloadChange}
+                  theme="vs-dark"
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    scrollBeyondLastLine: false,
+                    renderWhitespace: "selection",
+                    automaticLayout: true,
+                  }}
+                  className="monaco-input"
+                />
+              </div>
+              {jsonError ? (
+                <p className="text-xs font-medium text-destructive">
+                  {jsonError}
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  JSON valid. 실행 시 payload로 전송됩니다.
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Button
+                className="w-full"
+                onClick={handleRun}
+                disabled={
+                  Boolean(jsonError) || isRunning || !selectedFunction || selectedFunction.id < 0
+                }
+              >
+                {isRunning ? "실행 중..." : selectedFunction ? "실행" : "함수 선택"}
+              </Button>
+              {runMessage && (
+                <p className="text-xs text-muted-foreground">{runMessage}</p>
+              )}
+            </div>
+            <div className="flex flex-1 flex-col space-y-3 border-t pt-4 min-h-0">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1 rounded-md bg-muted/60 p-1 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("output")}
+                    className={cn(
+                      "rounded-md px-3 py-1.5 font-medium transition",
+                      activeTab === "output"
+                        ? "bg-background shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Output
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("history")}
+                    className={cn(
+                      "rounded-md px-3 py-1.5 font-medium transition",
+                      activeTab === "history"
+                        ? "bg-background shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    History
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
+                      statusMeta[runStatus].className,
+                      statusMeta[runStatus].textClass,
+                    )}
+                  >
+                    {statusMeta[runStatus].label}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+                    Duration
+                    <span className="text-foreground">{formatDuration(runDurationMs)}</span>
                   </span>
                 </div>
-                <div className="space-y-2 max-h-80 overflow-auto">
-                  {schedulesError ? (
-                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-[11px] text-destructive">
-                      {schedulesError}
+              </div>
+
+              {activeTab === "output" ? (
+                <div
+                  className="flex flex-1 min-h-0 w-full flex-col gap-3"
+                  style={{ scrollbarGutter: "stable both-edges" }}
+                >
+                  {runStatus === "fail" && (
+                    <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                      오류가 발생했습니다. 로그를 확인하세요.
                     </div>
-                  ) : schedules.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-muted-foreground">
-                      예약된 실행이 없습니다. 왼쪽에서 실행 시점을 추가하세요.
+                  )}
+                  {!selectedFunction && (
+                    <div className="rounded-md border border-border bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
+                      함수를 선택하면 실행 결과가 표시됩니다.
+                    </div>
+                  )}
+                  <div className="grid h-full min-h-0 w-full grid-rows-[1fr_1fr] gap-3">
+                    <div className="flex min-h-0 min-w-0 flex-col rounded-lg border bg-card/60 p-3">
+                      <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                        Logs
+                      </p>
+                      <div className="mt-1 flex-1 overflow-auto rounded-md border border-border/60 bg-card/80 p-2 font-mono text-xs leading-relaxed text-foreground/80">
+                        {runLogs.length === 0 ? (
+                          <p className="text-muted-foreground">No logs yet.</p>
+                        ) : (
+                          runLogs.map((line, idx) => (
+                            <p
+                              key={idx}
+                              className="whitespace-pre-wrap break-all"
+                            >
+                              {line}
+                            </p>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex min-h-0 min-w-0 flex-col rounded-lg border bg-card/60 p-3">
+                      <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                        Result
+                      </p>
+                      <pre className="mt-1 flex-1 overflow-auto rounded-md border border-border/60 bg-card/80 p-3 text-xs leading-relaxed text-foreground/80">
+                        {runResult || "결과가 아직 없습니다. 실행 후 결과가 표시됩니다."}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="flex flex-1 min-h-0 w-full flex-col overflow-hidden rounded-lg border bg-card/60 overflow-y-scroll"
+                  style={{ scrollbarGutter: "stable both-edges" }}
+                >
+                  {!selectedFunction || selectedFunction.id < 0 ? (
+                    <div className="p-3 text-xs text-muted-foreground">
+                      함수를 저장한 뒤 이력이 표시됩니다.
+                    </div>
+                  ) : historyLoading ? (
+                    <div className="p-3 text-xs text-muted-foreground">
+                      이력 불러오는 중...
+                    </div>
+                  ) : historyError ? (
+                    <div className="p-3 text-xs text-destructive">
+                      {historyError}
+                    </div>
+                  ) : historyRows.length === 0 ? (
+                    <div className="p-3 text-xs text-muted-foreground">
+                      이력이 없습니다. 실행 후 기록이 표시됩니다.
                     </div>
                   ) : (
-                    schedules
-                      .slice()
-                      .sort((a, b) => b.scheduled_at.localeCompare(a.scheduled_at))
-                      .map((item) => {
-                        const fnName = selectedFunction?.name ?? "알 수 없음";
-                        const isPast = new Date(item.scheduled_at).getTime() <= Date.now();
-                        const statusLabel = isPast ? "실행됨" : "대기";
-                        const statusClass = isPast
-                          ? "bg-emerald-100 text-emerald-900 border-emerald-200"
-                          : "bg-amber-100 text-amber-900 border-amber-200";
-                        return (
-                          <div
-                            key={item.id}
-                            className="grid grid-cols-[1fr_auto] gap-3 rounded-lg border border-slate-200 bg-white/80 px-3 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.05)]"
-                          >
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
-                                <span>{fnName}</span>
-                                <span
-                                  className={cn(
-                                    "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold",
-                                    statusClass,
-                                  )}
-                                >
-                                  {statusLabel}
-                                </span>
-                              </div>
-                              <p className="text-[12px] text-muted-foreground">
-                                ID: {item.id} · {formatScheduleTime(item.scheduled_at)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleScheduleDelete(item.id)}
-                              >
-                                삭제
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })
+                    <div className="h-full overflow-auto overflow-x-auto">
+                      <table className="min-w-full table-fixed text-left text-xs">
+                        <thead className="bg-muted/80 text-foreground sticky top-0">
+                          <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            <th className="px-3 py-2 font-semibold">Function</th>
+                            <th className="px-3 py-2 font-semibold">Status</th>
+                            <th className="px-3 py-2 font-semibold">Duration</th>
+                            <th className="px-3 py-2 font-semibold">Started</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/80">
+                          {historyRows.map((row) => {
+                            const badgeClass =
+                              (row.status ?? "").toLowerCase() === "success"
+                                ? "bg-emerald-100 text-emerald-900"
+                                : "bg-red-100 text-red-900";
+                            const fnName =
+                              functionNameMap.get(row.function_id ?? -1) ??
+                              selectedFunction?.name ??
+                              "-";
+                            const started =
+                              row.invoked_at && row.invoked_at.length >= 19
+                                ? row.invoked_at.slice(0, 19)
+                                : row.invoked_at ?? "-";
+                            return (
+                              <tr key={row.id} className="hover:bg-accent/40">
+                                <td className="px-3 py-2">{fnName}</td>
+                                <td className="px-3 py-2">
+                                  <span
+                                    className={cn(
+                                      "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                                      badgeClass,
+                                    )}
+                                  >
+                                    {row.status ?? "-"}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">
+                                  {formatDuration(row.duration_ms)}
+                                </td>
+                                <td className="px-3 py-2 text-muted-foreground">
+                                  {started}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="relative rounded-2xl border border-slate-200/80 bg-white/85 shadow-xl shadow-slate-200/70 backdrop-blur text-[15px]">
+        <CardHeader className="flex flex-row items-center justify-between gap-3 border-b pb-4">
+          <div className="space-y-1">
+            <CardTitle className="text-lg">Scheduler</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              실행 시점을 지정해 예약 실행을 만듭니다. 예약이 시작되면 Output 로그에 시작 메시지가 표시됩니다.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[12px] font-semibold text-muted-foreground">
+              {schedules.length} scheduled
+            </span>
+            {!remoteEnabled && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[12px] font-semibold text-red-700">
+                API disabled
+              </span>
+            )}
+          </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  대상 함수
+                </label>
+                <p className="text-sm font-semibold text-slate-900">
+                  {selectedFunction?.name ?? "선택된 함수 없음"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  예약은 현재 선택된 함수에 대해 생성됩니다.
+                </p>
+              </div>
+
+              <div className="space-y-3 w-full">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    실행 일시
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    className="h-10 w-full"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    현재 시각 이후로만 설정할 수 있습니다.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Payload (선택)
+                  </label>
+                  <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-inner">
+                    <MonacoEditor
+                      height="180px"
+                      language="json"
+                      value={schedulePayload}
+                      onChange={(value) => setSchedulePayload(value ?? "")}
+                      theme="vs-dark"
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 12,
+                        scrollBeyondLastLine: false,
+                        renderWhitespace: "selection",
+                        automaticLayout: true,
+                      }}
+                      className="monaco-input"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    비워두면 payload는 전송하지 않습니다.
+                  </p>
+                </div>
+
+                <Button className="w-full h-10 text-[15px]" onClick={handleScheduleAdd}>
+                  예약 생성
+                </Button>
               </div>
             </div>
-        </CardContent>
-      </Card>
-      </div>
+
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold">예약 목록</p>
+                  <p className="text-xs text-muted-foreground">
+                    삭제 시 백엔드에 바로 반영됩니다.
+                  </p>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  {schedulesLoading
+                    ? "불러오는 중..."
+                    : schedulesError
+                      ? "오류 발생"
+                      : `${schedules.length}개`}
+                </span>
+              </div>
+              <div className="space-y-2 max-h-80 overflow-auto">
+                {schedulesError ? (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-[11px] text-destructive">
+                    {schedulesError}
+                  </div>
+                ) : schedules.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-muted-foreground">
+                    예약된 실행이 없습니다. 왼쪽에서 실행 시점을 추가하세요.
+                  </div>
+                ) : (
+                  schedules
+                    .slice()
+                    .sort((a, b) => b.scheduled_at.localeCompare(a.scheduled_at))
+                    .map((item) => {
+                      const fnName = selectedFunction?.name ?? "알 수 없음";
+                      const isPast = new Date(item.scheduled_at).getTime() <= Date.now();
+                      const statusLabel = isPast ? "실행됨" : "대기";
+                      const statusClass = isPast
+                        ? "bg-emerald-100 text-emerald-900 border-emerald-200"
+                        : "bg-amber-100 text-amber-900 border-amber-200";
+                      return (
+                        <div
+                          key={item.id}
+                          className="grid grid-cols-[1fr_auto] gap-3 rounded-lg border border-slate-200 bg-white/80 px-3 py-3 shadow-[0_4px_20px_rgba(15,23,42,0.05)]"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
+                              <span>{fnName}</span>
+                              <span
+                                className={cn(
+                                  "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                                  statusClass,
+                                )}
+                              >
+                                {statusLabel}
+                              </span>
+                            </div>
+                            <p className="text-[12px] text-muted-foreground">
+                              ID: {item.id} · {formatScheduleTime(item.scheduled_at)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleScheduleDelete(item.id)}
+                            >
+                              삭제
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+          </div>
+      </CardContent>
+    </Card>
     </div>
-  );
+  </div>
+);
 }
