@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
+import Snowfall from 'react-snowfall'
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1070,6 +1070,7 @@ export default function HomePage({
 
 return (
   <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <Snowfall />
     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(14,165,233,0.08),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_30%)]" />
     <div className="pointer-events-none absolute -right-16 top-10 h-64 w-64 rounded-full bg-rose-500/30 blur-[100px] mix-blend-multiply" />
     <div className="pointer-events-none absolute -left-10 bottom-12 h-56 w-56 rounded-full bg-emerald-300/20 blur-3xl mix-blend-screen" />
@@ -1091,7 +1092,6 @@ return (
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* 헤더 바 수정: 강렬한 Red 그라데이션 포인트 */}
             <div className="h-10 w-1.5 rounded-full bg-gradient-to-b from-red-600 via-rose-500 to-red-800 shadow-[0_0_15px_rgba(225,29,72,0.5)]" />
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
@@ -1208,9 +1208,7 @@ return (
                     onClick={() => handleSelectFunction(fn)}
                     className={cn(
                       "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition-all duration-300",
-                      // 수정: 비활성 상태일 때 호버 시 살짝 붉은 테두리 힌트
                       "border-slate-200/60 bg-white/70 hover:bg-slate-50 hover:border-rose-200/50 shadow-sm",
-                      // 수정: 활성 상태일 때 Rose/Red 테마 적용 (글로우 효과 포함)
                       isActive &&
                         "border-rose-200 bg-rose-50/80 ring-1 ring-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.15)] z-10",
                     )}
@@ -1236,14 +1234,13 @@ return (
                         </span>
                       </div>
                     </div>
-                    {/* 수정: Active 텍스트를 Pulse Dot 디자인으로 변경 */}
                     {isActive && (
-                       <div className="flex items-center gap-1.5 rounded-full bg-white/60 px-2 py-1 shadow-sm border border-rose-100">
+                       <div className="flex items-center gap-1.5 rounded-full bg-white/60 px-2 py-1 shadow-sm border border-emerald-100">
                         <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
                           Active
                         </span>
                       </div>
