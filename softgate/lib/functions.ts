@@ -20,23 +20,25 @@ export type SoftGateFunction = {
 
 export const defaultCodeByLanguage: Record<Language, string> = {
   python: `def handler(event):
-  score = int(event.get("score", 0))
+    payload = event.get("payload", {})
+    user = payload.get("user", "world")
+    
+    # 얼마나 연산할지 조절할 수 있는 파라미터 (기본 200,000번)
+    iterations = int(payload.get("iterations", 200_000))
 
-  if score >= 90:
-      grade = "A"
-  elif score >= 80:
-      grade = "B"
-  elif score >= 70:
-      grade = "C"
-  elif score >= 60:
-      grade = "D"
-  else:
-      grade = "F"
+    # 가벼운 더미 연산 (CPU만 쓰는 연산)
+    acc = 0
+    for i in range(iterations):
+        acc += (i % 97) * (i % 89)
 
-  return {
-      "score": score,
-      "grade": grade
-  }
+    return {
+        "status": "ok",
+        "lang": "python",
+        "echo": payload,
+        "message": f"Hello, {user}!",
+        "iterations": iterations,
+        "acc": acc,              # 연산 결과 (그냥 숫자)
+    }
   `,
   pypy3: `def handler(event):
   message = event.get("message", "hello")
