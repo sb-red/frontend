@@ -19,97 +19,126 @@ export type SoftGateFunction = {
 
 export const defaultCodeByLanguage: Record<Language, string> = {
   python: `def handler(event):
-    payload = event.get("payload", {})
-    user = payload.get("user", "world")
-    return {
-        "status": "ok",
-        "lang": "python",
-        "echo": payload,
-        "message": f"Hello, {user}!"
-    }
-`,
+  score = int(event.get("score", 0))
+
+  if score >= 90:
+      grade = "A"
+  elif score >= 80:
+      grade = "B"
+  elif score >= 70:
+      grade = "C"
+  elif score >= 60:
+      grade = "D"
+  else:
+      grade = "F"
+
+  return {
+      "score": score,
+      "grade": grade
+  }
+  `,
   pypy3: `def handler(event):
-    payload = event.get("payload", {})
-    user = payload.get("user", "world")
-    return {
-        "status": "ok",
-        "lang": "pypy3",
-        "echo": payload,
-        "message": f"Hello, {user} (PyPy3)!"
-    }
-`,
-  node: `exports.handler = async (event) => {
-  const payload = event?.payload ?? {};
-  return { status: "ok", lang: "node", echo: payload };
-};
-`,
-  go: `package main
+  message = event.get("message", "hello")
+  return {
+      "runtime": "pypy3",
+      "echo": message
+  }
+  `,
+  node: `function handler(event) {
+  const score = parseInt(event.score ?? 0, 10);
+  let grade;
+  if (score >= 90) grade = "A";
+  else if (score >= 80) grade = "B";
+  else if (score >= 70) grade = "C";
+  else if (score >= 60) grade = "D";
+  else grade = "F";
 
-import "context"
-
-func Handler(ctx context.Context, event map[string]any) (map[string]any, error) {
-    return map[string]any{"status": "ok", "lang": "go", "echo": event}, nil
+  return {
+    score,
+    grade,
+  };
 }
-`,
-  java11: `import java.util.HashMap;
-import java.util.Map;
+  `,
+  go: `func handler(event map[string]interface{}) map[string]interface{} {
+    score := int(event["score"].(float64))
+    var grade string
 
-public class Handler {
-    public Map<String, Object> handle(Map<String, Object> event) {
-        Map<String, Object> res = new HashMap<>();
-        res.put("status", "ok");
-        res.put("lang", "java11");
-        res.put("echo", event);
-        return res;
+    switch {
+    case score >= 90:
+        grade = "A"
+    case score >= 80:
+        grade = "B"
+    case score >= 70:
+        grade = "C"
+    case score >= 60:
+        grade = "D"
+    default:
+        grade = "F"
     }
-}
-`,
-  java17: `import java.util.HashMap;
-import java.util.Map;
 
-public class Handler {
-    public Map<String, Object> handle(Map<String, Object> event) {
-        Map<String, Object> res = new HashMap<>();
-        res.put("status", "ok");
-        res.put("lang", "java17");
-        res.put("echo", event);
-        return res;
+    return map[string]interface{}{
+        "score": score,
+        "grade": grade,
     }
 }
-`,
-  java21: `import java.util.HashMap;
-import java.util.Map;
+  `,
+  java11: `import java.util.Map;
+import java.util.HashMap;
 
-public class Handler {
-    public Map<String, Object> handle(Map<String, Object> event) {
-        Map<String, Object> res = new HashMap<>();
-        res.put("status", "ok");
-        res.put("lang", "java21");
-        res.put("echo", event);
-        return res;
+class Handler {
+  public static Map<String, Object> handle(Map<String, Object> event) {
+    Map<String, Object> result = new HashMap<>();
+    Object rawScore = event.getOrDefault("score", 0);
+    int score = Integer.parseInt(String.valueOf(rawScore));
+    result.put("score", score);
+    result.put("runtime", "java11");
+    return result;
+  }
+}
+  `,
+  java17: `import java.util.Map;
+import java.util.HashMap;
+
+class Handler {
+    public static Map<String, Object> handle(Map<String, Object> event) {
+        Map<String, Object> result = new HashMap<>();
+        String name = String.valueOf(event.getOrDefault("name", "world"));
+        result.put("message", "Hello " + name + " from Java 17");
+        return result;
     }
 }
-`,
-  swift: `import Foundation
+  `,
+  java21: `import java.util.Map;
+import java.util.HashMap;
 
-struct Handler {
-    func handle(event: [String: Any]) -> [String: Any] {
-        return [
-            "status": "ok",
-            "lang": "swift",
-            "echo": event
-        ]
+class Handler {
+    public static Map<String, Object> handle(Map<String, Object> event) {
+        Map<String, Object> result = new HashMap<>();
+        String name = String.valueOf(event.getOrDefault("name", "world"));
+        result.put("message", "Hello " + name + " from Java 21");
+        return result;
     }
 }
-`,
-  kotlin: `fun handler(event: Map<String, Any?>): Map<String, Any?> {
-    return mapOf(
-        "status" to "ok",
-        "lang" to "kotlin",
-        "echo" to event
-    )
+  `,
+  swift: `func handler(event: [String: Any]) -> [String: Any] {
+  let name = event["name"] as? String ?? "world"
+  return [
+      "runtime": "swift",
+      "greeting": "Hello \\(name) from Swift"
+  ]
 }
-`,
+  `,
+  kotlin: `object Handler {
+    @JvmStatic
+    fun handle(event: Map<String, Any?>): Map<String, Any?> {
+        val text = event["message"]?.toString() ?: "hello"
+        return mapOf(
+            "runtime" to "kotlin",
+            "echo" to text
+        )
+    }
+}
+  `,
 };
 
 export const runtimeForLanguage: Record<Language, string> = {

@@ -148,12 +148,7 @@ const MAX_POLL_ATTEMPTS = 60; // ~60s with 1s interval
 const MAX_STUCK_ATTEMPTS = 30; // ~30s without status change
 
 const samplePayload = `{
-  "event": "ping",
-  "payload": {
-    "requestId": "job-1234",
-    "message": "demonstrate 3-panel layout",
-    "delayMs": 1200
-  }
+  "score": "85"
 }`;
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
